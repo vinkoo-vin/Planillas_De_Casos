@@ -1,24 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import {
+  validateCaseInput,
+  prepareCasePayload,
+  caseDetailIncludes,
+} from "@/lib/case-service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const isFull = req.nextUrl.searchParams.get("full") === "true";
+    const { searchParams } = req.nextUrl;
+    const id = searchParams.get("id");
+    const search = searchParams.get("search")?.trim();
+    const isFull = searchParams.get("full") === "true";
 
-    // Consulta optimizada: en modo lista excluimos campos pesados (imágenes en base64, etc.)
+    // 1. Consulta de caso individual completo por ID (para el Modal de Ficha Clínica)
+    if (id) {
+      const singleCase = await prisma.case.findUnique({
+        where: { id },
+        include: caseDetailIncludes,
+      });
+
+      if (!singleCase) {
+        return NextResponse.json(
+          { success: false, error: "Caso clínico no encontrado" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(
+        { success: true, data: singleCase },
+        {
+          headers: {
+            "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+          },
+        }
+      );
+    }
+
+    // 2. Filtro de búsqueda opcional
+    const whereClause = search
+      ? {
+          OR: [
+            { title: { contains: search, mode: "insensitive" as const } },
+            { clinicalHistory: { contains: search, mode: "insensitive" as const } },
+            { keywords: { some: { keyword: { name: { contains: search, mode: "insensitive" as const } } } } },
+          ],
+        }
+      : undefined;
+
+    // 3. Consulta para la lista de casos
     const cases = isFull
       ? await prisma.case.findMany({
+          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
-          include: {
-            keywords: { include: { keyword: true } },
-            studies: { include: { studyCatalog: true } },
-            treatmentOptions: { orderBy: { order: "asc" } },
-          },
+          include: caseDetailIncludes,
         })
       : await prisma.case.findMany({
+          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
           select: {
@@ -58,7 +99,14 @@ export async function GET(req: NextRequest) {
           },
         });
 
-    return NextResponse.json({ success: true, data: cases });
+    return NextResponse.json({
+      success: true,
+      data: cases,
+      meta: {
+        total: cases.length,
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error) {
     console.error("[Casos] Error al obtener casos clínicos:", error);
     return NextResponse.json(
@@ -72,198 +120,96 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const {
-      title,
-      clinicalHistory,
-      hasVideo = false,
-      videoDescription,
-      videoUrl,
-      isPhysicalExamInteractive = true,
-      physicalExamZone,
-      physicalExamRefPoint,
-      physicalExamStandard,
-      painLevel,
-      treatmentRaw,
-      keywords = [],
-      studies = [],
-    } = body;
-
-    if (!title?.trim()) {
-      return NextResponse.json(
-        { success: false, error: "El título del caso es obligatorio" },
-        { status: 400 }
-      );
+    const validation = validateCaseInput(body);
+    if (!validation.isValid) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
     }
 
-    if (!clinicalHistory?.trim()) {
-      return NextResponse.json(
-        { success: false, error: "La descripción clínica es obligatoria" },
-        { status: 400 }
-      );
-    }
+    const { baseData, keywordsCreate, studiesCreate, treatmentOptionsCreate } =
+      await prepareCasePayload(body);
 
-    if (!painLevel?.trim()) {
-      return NextResponse.json(
-        { success: false, error: "El hallazgo del examen físico o nivel de dolor es obligatorio" },
-        { status: 400 }
-      );
-    }
-
-    // 1. Procesar opciones de tratamiento
-    const treatmentLines = (treatmentRaw || "")
-      .split("\n")
-      .map((line: string) => line.trim())
-      .filter((line: string) => line.length > 0);
-
-    const parsedTreatments = treatmentLines.map((line: string, index: number) => {
-      const isCorrect = /\[CORRECTA\]/i.test(line);
-      const cleanDescription = line.replace(/\[CORRECTA\]/gi, "").replace(/^[-*•\d.]\s*/, "").trim();
-      return {
-        description: cleanDescription || line,
-        isCorrect,
-        order: index + 1,
-      };
-    });
-
-    // 2. Optimización por Lotes (Batching) de Palabras Clave: Evita N viajes de red individuales
-    const validKeywordNames = Array.from(
-      new Set(
-        (keywords as string[])
-          .map((k: string) => k?.trim())
-          .filter((k: string) => Boolean(k))
-      )
-    );
-
-    let keywordRecords: { id: string }[] = [];
-    if (validKeywordNames.length > 0) {
-      // 2a. Buscar en 1 sola consulta las que ya existen
-      const existingKeywords = await prisma.keyword.findMany({
-        where: { name: { in: validKeywordNames } },
-        select: { id: true, name: true },
-      });
-      const existingMap = new Map(existingKeywords.map((k) => [k.name, k.id]));
-
-      // 2b. Crear en lote solo las que falten
-      const missingNames = validKeywordNames.filter((name) => !existingMap.has(name));
-      if (missingNames.length > 0) {
-        await prisma.keyword.createMany({
-          data: missingNames.map((name) => ({ name })),
-          skipDuplicates: true,
-        });
-        const newlyCreated = await prisma.keyword.findMany({
-          where: { name: { in: missingNames } },
-          select: { id: true, name: true },
-        });
-        newlyCreated.forEach((k) => existingMap.set(k.name, k.id));
-      }
-
-      keywordRecords = validKeywordNames
-        .map((name) => {
-          const id = existingMap.get(name);
-          return id ? { id } : null;
-        })
-        .filter((k): k is { id: string } => k !== null);
-    }
-
-    // 3. Optimización por Lotes (Batching) de Catálogo de Estudios
-    interface RawStudy {
-      name?: string;
-      definition?: string;
-      isAdequate?: boolean;
-      findings?: string;
-      imageUrl?: string;
-      imageName?: string;
-    }
-
-    const rawStudies: RawStudy[] = (studies as RawStudy[]).filter((st) => Boolean(st?.name?.trim()));
-    const uniqueStudyNames = Array.from(new Set(rawStudies.map((s) => s.name!.trim())));
-
-    const existingStudies =
-      uniqueStudyNames.length > 0
-        ? await prisma.studyCatalog.findMany({
-            where: { name: { in: uniqueStudyNames } },
-            select: { id: true, name: true },
-          })
-        : [];
-    const studyMap = new Map(existingStudies.map((s) => [s.name, s.id]));
-
-    const missingStudies = uniqueStudyNames.filter((name) => !studyMap.has(name));
-    if (missingStudies.length > 0) {
-      const studyDefinitionsMap = new Map(
-        rawStudies.map((s) => [s.name!.trim(), s.definition?.trim() || "Estudio complementario de diagnóstico"])
-      );
-      await prisma.studyCatalog.createMany({
-        data: missingStudies.map((name) => ({
-          name,
-          generalDefinition: studyDefinitionsMap.get(name) || "Estudio complementario de diagnóstico",
-        })),
-        skipDuplicates: true,
-      });
-      const newlyCreatedStudies = await prisma.studyCatalog.findMany({
-        where: { name: { in: missingStudies } },
-        select: { id: true, name: true },
-      });
-      newlyCreatedStudies.forEach((s) => studyMap.set(s.name, s.id));
-    }
-
-    const validStudies = rawStudies
-      .map((st) => {
-        const catalogId = studyMap.get(st.name!.trim());
-        if (!catalogId) return null;
-        return {
-          studyCatalogId: catalogId,
-          isAdequate: st.isAdequate ?? true,
-          findings: st.findings?.trim() || "Sin hallazgos especificados",
-          imageUrl: st.imageUrl || null,
-          imageName: st.imageName || null,
-        };
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
-
-    // 4. Crear el caso con todas sus relaciones anidadas de forma atómica
     const fullCase = await prisma.case.create({
       data: {
-        title: title.trim(),
-        clinicalHistory: clinicalHistory.trim(),
-        hasVideo: Boolean(hasVideo),
-        videoDescription: videoDescription?.trim() || null,
-        videoUrl: videoUrl?.trim() || null,
-        isPhysicalExamInteractive: Boolean(isPhysicalExamInteractive),
-        physicalExamZone: physicalExamZone?.trim() || null,
-        physicalExamRefPoint: physicalExamRefPoint?.trim() || null,
-        physicalExamStandard: physicalExamStandard?.trim() || null,
-        painLevel: painLevel.trim(),
-        treatmentRaw: treatmentRaw?.trim() || null,
-        keywords: {
-          create: keywordRecords.map((kw) => ({
-            keywordId: kw.id,
-          })),
-        },
-        studies: {
-          create: validStudies.map((s) => ({
-            studyCatalogId: s.studyCatalogId,
-            isAdequate: s.isAdequate,
-            findings: s.findings,
-            imageUrl: s.imageUrl,
-            imageName: s.imageName,
-          })),
-        },
-        treatmentOptions: {
-          create: parsedTreatments,
-        },
+        ...baseData,
+        keywords: { create: keywordsCreate },
+        studies: { create: studiesCreate },
+        treatmentOptions: { create: treatmentOptionsCreate },
       },
-      include: {
-        keywords: { include: { keyword: true } },
-        studies: { include: { studyCatalog: true } },
-        treatmentOptions: true,
-      },
+      include: caseDetailIncludes,
     });
 
     return NextResponse.json({ success: true, data: fullCase }, { status: 201 });
   } catch (error) {
-    console.error("[Casos] Error al registrar caso clínico en Supabase:", error);
+    console.error("[Casos] Error al registrar caso clínico:", error);
     return NextResponse.json(
       { success: false, error: "Error interno al guardar el caso en la base de datos" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "El ID del caso es requerido para actualizarlo" },
+        { status: 400 }
+      );
+    }
+
+    const validation = validateCaseInput(body);
+    if (!validation.isValid) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+    }
+
+    const existingCase = await prisma.case.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!existingCase) {
+      return NextResponse.json(
+        { success: false, error: "Caso clínico no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    const { baseData, keywordsCreate, studiesCreate, treatmentOptionsCreate } =
+      await prepareCasePayload(body);
+
+    // Actualización atómica del caso y sincronización de relaciones hijas
+    const updatedCase = await prisma.case.update({
+      where: { id },
+      data: {
+        ...baseData,
+        keywords: {
+          deleteMany: {},
+          create: keywordsCreate,
+        },
+        studies: {
+          deleteMany: {},
+          create: studiesCreate,
+        },
+        treatmentOptions: {
+          deleteMany: {},
+          create: treatmentOptionsCreate,
+        },
+      },
+      include: caseDetailIncludes,
+    });
+
+    return NextResponse.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error("[Casos] Error al actualizar caso clínico:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Error interno al actualizar el caso en la base de datos",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
