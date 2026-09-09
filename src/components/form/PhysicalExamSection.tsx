@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CustomSelect } from "@/components/common/CustomSelect";
 
 interface PhysicalExamSectionProps {
   isInteractiveExam: boolean;
@@ -147,22 +148,42 @@ export const PhysicalExamSection = React.memo(function PhysicalExamSection({
 
       {/* NIVEL DE DOLOR / HALLAZGO */}
       <div className="form-group">
-        <label htmlFor="painLevelSelect" className="block text-sm font-semibold text-text-main mb-1.5">
-          Hallazgo o Nivel de Dolor / Reacción (Catálogo Pediátrico):
+        <label htmlFor="painLevelSelect" className="block text-sm font-semibold text-text-main mb-1.5 flex items-center justify-between">
+          <span>Hallazgo o Nivel de Dolor / Reacción (Catálogo Pediátrico):</span>
+          <span className="text-xs font-normal text-text-muted">
+            {painLevelsPool.length} opciones
+          </span>
         </label>
-        <div className="flex gap-2.5 flex-wrap sm:flex-nowrap">
-          <select
-            id="painLevelSelect"
-            className="flex-1 px-3.5 py-2.5 rounded-xl text-sm"
-            value={selectedPainLevel}
-            onChange={(e) => setSelectedPainLevel(e.target.value)}
-          >
-            {painLevelsPool.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+        <div className="flex gap-2.5 flex-wrap sm:flex-nowrap items-center">
+          <div className="flex-1 min-w-[240px]">
+            <CustomSelect
+              id="painLevelSelect"
+              value={selectedPainLevel}
+              onChange={(val) => {
+                if (val === "__ADD_PAIN__") {
+                  onPromptNewPainLevel();
+                } else {
+                  setSelectedPainLevel(val);
+                }
+              }}
+              placeholder="Seleccionar nivel de dolor o reacción..."
+              searchPlaceholder="Buscar nivel o descriptor clínico..."
+              options={painLevelsPool.map((p) => ({
+                value: p,
+                label: p,
+              }))}
+              actionOption={{
+                value: "__ADD_PAIN__",
+                label: "Añadir nuevo nivel al catálogo...",
+                description: "Crear un nuevo descriptor de reacción o dolor",
+              }}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              }
+            />
+          </div>
           <button
             type="button"
             className="btn btn-secondary px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0"

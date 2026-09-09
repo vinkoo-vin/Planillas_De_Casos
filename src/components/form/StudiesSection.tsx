@@ -5,6 +5,7 @@ import { StudyCatalogItem, AddedStudy } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
 import { AdequacyBadge } from "@/components/common/AdequacyBadge";
 import { ZoomInIcon, CheckIcon } from "@/components/common/Icons";
+import { CustomSelect } from "@/components/common/CustomSelect";
 
 import { compressImageToWebP } from "@/lib/image-compression";
 
@@ -165,40 +166,81 @@ export const StudiesSection = React.memo(function StudiesSection({
       <div className="add-study-box p-5 rounded-xl border border-border-subtle bg-surface-subtle mb-6">
         <div className="study-form-grid grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-4 mb-4">
           <div className="form-group">
-            <label htmlFor="studySelect" className="block text-sm font-semibold text-text-main mb-1.5">
-              Tipo de Estudio:
+            <label htmlFor="studySelect" className="block text-sm font-semibold text-text-main mb-1.5 flex items-center justify-between">
+              <span>Tipo de Estudio:</span>
+              <span className="text-xs font-normal text-text-muted">
+                {studiesCatalog.length} disponibles
+              </span>
             </label>
-            <select
+            <CustomSelect
               id="studySelect"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
               value={studySelectValue}
-              onChange={(e) => setStudySelectValue(e.target.value)}
-            >
-              <option value="">-- Seleccionar de la lista --</option>
-              {studiesCatalog.map((s) => (
-                <option key={s.id} value={s.name}>
-                  {s.name}
-                </option>
-              ))}
-              <option value="__NEW__" style={{ fontWeight: "bold", color: "var(--teal-text)" }}>
-                + Crear nuevo estudio...
-              </option>
-            </select>
+              onChange={(val) => setStudySelectValue(val)}
+              placeholder="-- Seleccionar de la lista --"
+              searchPlaceholder="Buscar estudio por nombre..."
+              options={studiesCatalog.map((s) => ({
+                value: s.name,
+                label: s.name,
+                subtitle: s.generalDefinition || undefined,
+              }))}
+              actionOption={{
+                value: "__NEW__",
+                label: "Crear nuevo estudio...",
+                description: "Definir un estudio personalizado para el catálogo",
+              }}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              }
+            />
           </div>
 
           <div className="form-group">
-            <label htmlFor="studyAdequateSelect" className="block text-sm font-semibold text-text-main mb-1.5">
-              ¿Es un estudio indicado para el caso?
+            <label className="block text-sm font-semibold text-text-main mb-1.5">
+              Criterio Pedagógico:
             </label>
-            <select
-              id="studyAdequateSelect"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
-              value={studyIsAdequate}
-              onChange={(e) => setStudyIsAdequate(e.target.value)}
-            >
-              <option value="si">Indicado (Aporta al diagnóstico correcto)</option>
-              <option value="no">Distractor (Innecesario o contraindicado)</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2 h-[42px]">
+              <button
+                type="button"
+                onClick={() => setStudyIsAdequate("si")}
+                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  studyIsAdequate === "si"
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-500 shadow-xs"
+                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "si" ? "text-emerald-500" : "opacity-40"}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <div className="text-left leading-tight">
+                  <span>Indicado</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStudyIsAdequate("no")}
+                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  studyIsAdequate === "no"
+                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-2 border-rose-500 shadow-xs"
+                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "no" ? "text-rose-500" : "opacity-40"}>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <div className="text-left leading-tight">
+                  <span>Distractor</span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
