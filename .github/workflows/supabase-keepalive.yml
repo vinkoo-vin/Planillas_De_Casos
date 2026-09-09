@@ -1,0 +1,48 @@
+name: Supabase Keep-Alive Cron
+
+on:
+  schedule:
+    # Se ejecuta automáticamente cada 3 días a las 08:00 UTC
+    - cron: "0 8 */3 * *"
+  workflow_dispatch: # Permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias requeridas
+        run: npm install @prisma/client prisma pg
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Ejecutar consulta Keep-Alive a Supabase
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.SUPABASE_DB_URL }}
+        run: |
+          node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+            async function ping() {
+              try {
+                console.log('Iniciando autoconsulta a Supabase...');
+                const res = await prisma.\$queryRaw\`SELECT 1 as ping, NOW() as time;\`;
+                console.log('Ping exitoso:', res);
+                await prisma.\$disconnect();
+                process.exit(0);
+              } catch (err) {
+                console.error('Error durante el ping:', err);
+                await prisma.\$disconnect();
+                process.exit(1);
+              }
+            }
+            ping();
+          "

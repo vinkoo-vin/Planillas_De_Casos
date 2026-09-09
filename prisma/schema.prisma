@@ -1,0 +1,143 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum CaseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("case_status")
+}
+
+// 1. CASO CLÍNICO PRINCIPAL
+model Case {
+  id                         String              @id @default(cuid())
+  title                      String              @map("title")
+  clinicalHistory            String              @map("clinical_history") @db.Text
+  hasVideo                   Boolean             @default(false) @map("has_video")
+  videoDescription           String?             @map("video_description") @db.Text
+  videoUrl                   String?             @map("video_url")
+  isPhysicalExamInteractive  Boolean             @default(true) @map("is_physical_exam_interactive")
+  physicalExamZone           String?             @map("physical_exam_zone")
+  physicalExamRefPoint       String?             @map("physical_exam_ref_point")
+  physicalExamStandard       String?             @map("physical_exam_standard") @db.Text
+  painLevel                  String              @map("pain_level")
+  treatmentRaw               String?             @map("treatment_raw") @db.Text
+  status                     CaseStatus          @default(PUBLISHED) @map("status")
+  createdAt                  DateTime            @default(now()) @map("created_at")
+  updatedAt                  DateTime            @updatedAt @map("updated_at")
+
+  // Relaciones
+  keywords                   CaseKeyword[]
+  studies                    CaseStudy[]
+  treatmentOptions           TreatmentOption[]
+  studentEvaluations         StudentEvaluation[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("cases")
+}
+
+// 2. CATÁLOGO GLOBAL ACUMULATIVO DE PALABRAS CLAVE
+model Keyword {
+  id           String        @id @default(cuid())
+  name         String        @unique @map("name")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  caseKeywords CaseKeyword[]
+
+  @@map("keywords")
+}
+
+// TABLA PIVOTE M:N (Caso <-> Palabra Clave)
+model CaseKeyword {
+  caseId    String   @map("case_id")
+  keywordId String   @map("keyword_id")
+
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  keyword   Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@id([caseId, keywordId])
+  @@index([keywordId])
+  @@index([caseId])
+  @@map("case_keywords")
+}
+
+// 3. CATÁLOGO GLOBAL DE ESTUDIOS DIAGNÓSTICOS
+model StudyCatalog {
+  id                String      @id @default(cuid())
+  name              String      @unique @map("name")
+  generalDefinition String?     @map("general_definition") @db.Text
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  caseStudies       CaseStudy[]
+
+  @@map("study_catalog")
+}
+
+// 4. ESTUDIOS ASOCIADOS ESPECÍFICAMENTE AL CASO CLÍNICO
+model CaseStudy {
+  id              String        @id @default(cuid())
+  caseId          String        @map("case_id")
+  studyCatalogId  String        @map("study_catalog_id")
+  isAdequate      Boolean       @default(true) @map("is_adequate")
+  findings        String        @map("findings") @db.Text
+  imageUrl        String?       @map("image_url") @db.Text
+  imageName       String?       @map("image_name")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  case            Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  studyCatalog    StudyCatalog  @relation(fields: [studyCatalogId], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([studyCatalogId])
+  @@map("case_studies")
+}
+
+// 5. CATÁLOGO GLOBAL ACUMULATIVO DE NIVELES DE DOLOR / HALLAZGOS
+model PainLevelCatalog {
+  id          String   @id @default(cuid())
+  description String   @unique @map("description")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("pain_level_catalog")
+}
+
+// 6. OPCIONES TERAPÉUTICAS / CONDUCTA
+model TreatmentOption {
+  id          String   @id @default(cuid())
+  caseId      String   @map("case_id")
+  description String   @map("description") @db.Text
+  isCorrect   Boolean  @default(false) @map("is_correct")
+  feedback    String?  @map("feedback") @db.Text
+  order       Int      @default(0) @map("order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("treatment_options")
+}
+
+// 7. HISTORIAL / EVALUACIÓN DE SIMULACIÓN PARA ESTUDIANTES (FUTURA FASE)
+model StudentEvaluation {
+  id                  String   @id @default(cuid())
+  caseId              String   @map("case_id")
+  studentName         String?  @map("student_name")
+  score               Float?   @map("score")
+  studiesRequested    String[] @map("studies_requested")
+  selectedTreatmentId String?  @map("selected_treatment_id")
+  completedAt         DateTime @default(now()) @map("completed_at")
+
+  case                Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("student_evaluations")
+}
