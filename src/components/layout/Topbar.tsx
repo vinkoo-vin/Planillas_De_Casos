@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Image from "next/image";
 
 export type ActiveTab = "form" | "list" | "guide";
 
@@ -27,13 +28,15 @@ export function Topbar({ activeTab, onTabChange, savedCasesCount }: TopbarProps)
           className="app-brand flex items-center gap-3 cursor-pointer select-none"
           onClick={() => handleSelectTab("form")}
         >
-          <div className="brand-icon-box w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-            </svg>
+          <div className="brand-icon-box w-10 h-10 rounded-xl flex items-center justify-center shadow-md p-1.5 overflow-hidden">
+            <Image
+              src="/V1.svg"
+              alt="Vinko Logo"
+              width={26}
+              height={23}
+              priority
+              className="w-auto h-6 object-contain drop-shadow-sm"
+            />
           </div>
           <div>
             <div className="brand-title text-xl font-extrabold tracking-tight">Vinko</div>

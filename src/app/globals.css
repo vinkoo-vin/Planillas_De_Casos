@@ -654,11 +654,11 @@ textarea::placeholder {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--teal) 100%);
+  background: linear-gradient(135deg, #091E33 0%, #0E5E6F 100%);
+  border: 1px solid rgba(19, 174, 185, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
 }
 
