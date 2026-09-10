@@ -36,7 +36,6 @@ export default function Home() {
   const [keywordsPool, setKeywordsPool] = useState<string[]>([]);
   const [studiesCatalog, setStudiesCatalog] = useState<StudyCatalogItem[]>([]);
   const [painLevelsPool, setPainLevelsPool] = useState<string[]>([]);
-  const [, setIsLoadingCatalogs] = useState(true);
 
   // Casos guardados
   const [savedCasesList, setSavedCasesList] = useState<SavedCase[]>([]);
@@ -50,29 +49,12 @@ export default function Home() {
   // Caché en memoria para fichas clínicas completas (acceso instantáneo en 0ms)
   const caseDetailsCache = useRef<Map<string, SavedCase>>(new Map());
 
-  // Consulta de catálogos para el formulario
-  const fetchCatalogs = useCallback(async () => {
-    try {
-      setIsLoadingCatalogs(true);
-      const res = await fetch("/api/catalogs");
-      const json = await res.json();
-      if (json.success) {
-        setKeywordsPool(json.data.keywords);
-        setStudiesCatalog(json.data.studies);
-        setPainLevelsPool(json.data.painLevels);
-      }
-    } catch (err) {
-      console.error("Error al cargar catálogos:", err);
-    } finally {
-      setIsLoadingCatalogs(false);
-    }
-  }, []);
-
-  // Consulta de casos guardados (asíncrona en segundo plano)
+  // Consulta de casos guardados (asíncrona en segundo plano) con validación HTTP
   const fetchSavedCases = useCallback(async () => {
     try {
       setIsLoadingCases(true);
       const res = await fetch("/api/cases");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success) {
         setSavedCasesList(json.data);
@@ -88,7 +70,10 @@ export default function Home() {
   const handlePrefetchCase = useCallback((id: string) => {
     if (caseDetailsCache.current.has(id)) return;
     fetch(`/api/cases?id=${id}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((json) => {
         if (json.success && json.data) {
           caseDetailsCache.current.set(id, json.data);
@@ -100,32 +85,34 @@ export default function Home() {
   // Inspección de ficha detallada con apertura instantánea (0ms)
   const handleInspectCase = useCallback(
     (id: string) => {
-      // 1. Si ya se encuentra en la caché de alta velocidad, se abre al instante con datos completos
+      // 1. Lectura instantánea desde caché en memoria (0ms)
       const cached = caseDetailsCache.current.get(id);
       if (cached) {
         setInspectingCase(cached);
-        setIsLoadingDetail(false);
         return;
       }
 
-      // 2. Apertura optimista inmediata: renderizar con los datos ya disponibles en la lista de casos
-      const existingBasic = savedCasesList.find((c) => c.id === id);
-      if (existingBasic) {
-        setInspectingCase(existingBasic);
+      // 2. Fallback con datos parciales de la lista
+      const partial = savedCasesList.find((c) => c.id === id);
+      if (partial) {
+        setInspectingCase(partial);
       }
 
-      // 3. Sincronizar en segundo plano sin congelar la interfaz del usuario
+      // 3. Carga en segundo plano
       setIsLoadingDetail(true);
       fetch(`/api/cases?id=${id}`)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
         .then((json) => {
           if (json.success && json.data) {
             caseDetailsCache.current.set(id, json.data);
-            setInspectingCase((curr) => (curr && curr.id === id ? json.data : curr));
+            setInspectingCase(json.data);
           }
         })
         .catch((err) => {
-          console.error("Error al obtener detalle del caso:", err);
+          console.error("Error al cargar ficha detallada:", err);
         })
         .finally(() => {
           setIsLoadingDetail(false);
@@ -136,14 +123,34 @@ export default function Home() {
 
   // Carga inicial no bloqueante: la UI del formulario se renderiza al instante
   useEffect(() => {
-    fetchCatalogs();
+    let isMounted = true;
+    fetch("/api/catalogs")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (isMounted && json.success) {
+          setKeywordsPool(json.data.keywords);
+          setStudiesCatalog(json.data.studies);
+          setPainLevelsPool(json.data.painLevels);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al cargar catálogos iniciales:", err);
+      });
+
     const timer = setTimeout(() => {
       startTransition(() => {
         fetchSavedCases();
       });
     }, 40);
-    return () => clearTimeout(timer);
-  }, [fetchCatalogs, fetchSavedCases]);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [fetchSavedCases]);
 
   // Métricas calculadas con useMemo
   const totalStudiesCount = useMemo(() => {

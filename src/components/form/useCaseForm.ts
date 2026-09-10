@@ -49,21 +49,25 @@ export function useCaseForm({
   // Sincronizar borrador inicial cuando se carga desde la Guía o desde el modo Edición
   useEffect(() => {
     if (initialDraft) {
-      setEditingCaseId(initialDraft.id || null);
-      if (initialDraft.title !== undefined) setCaseTitle(initialDraft.title);
-      if (initialDraft.clinicalHistory !== undefined) setClinicalHistory(initialDraft.clinicalHistory);
-      if (initialDraft.treatmentOptions !== undefined) setTreatmentOptions(initialDraft.treatmentOptions);
-      if (initialDraft.selectedKeywords !== undefined) setSelectedKeywords(new Set(initialDraft.selectedKeywords));
-      if (initialDraft.isInteractiveExam !== undefined) setIsInteractiveExam(initialDraft.isInteractiveExam);
-      if (initialDraft.examZone !== undefined) setExamZone(initialDraft.examZone || "");
-      if (initialDraft.examRefPoint !== undefined) setExamRefPoint(initialDraft.examRefPoint || "");
-      if (initialDraft.examStandardText !== undefined) setExamStandardText(initialDraft.examStandardText || "");
-      if (initialDraft.painLevel !== undefined) setSelectedPainLevel(initialDraft.painLevel || "");
-      if (initialDraft.hasVideo !== undefined) setHasVideo(initialDraft.hasVideo ?? false);
-      if (initialDraft.videoDescription !== undefined) setVideoDescription(initialDraft.videoDescription || "");
-      if (initialDraft.addedStudies !== undefined) setAddedStudies(initialDraft.addedStudies || []);
+      queueMicrotask(() => {
+        setEditingCaseId(initialDraft.id || null);
+        if (initialDraft.title !== undefined) setCaseTitle(initialDraft.title);
+        if (initialDraft.clinicalHistory !== undefined) setClinicalHistory(initialDraft.clinicalHistory);
+        if (initialDraft.treatmentOptions !== undefined) setTreatmentOptions(initialDraft.treatmentOptions);
+        if (initialDraft.selectedKeywords !== undefined) setSelectedKeywords(new Set(initialDraft.selectedKeywords));
+        if (initialDraft.isInteractiveExam !== undefined) setIsInteractiveExam(initialDraft.isInteractiveExam);
+        if (initialDraft.examZone !== undefined) setExamZone(initialDraft.examZone || "");
+        if (initialDraft.examRefPoint !== undefined) setExamRefPoint(initialDraft.examRefPoint || "");
+        if (initialDraft.examStandardText !== undefined) setExamStandardText(initialDraft.examStandardText || "");
+        if (initialDraft.painLevel !== undefined) setSelectedPainLevel(initialDraft.painLevel || "");
+        if (initialDraft.hasVideo !== undefined) setHasVideo(initialDraft.hasVideo ?? false);
+        if (initialDraft.videoDescription !== undefined) setVideoDescription(initialDraft.videoDescription || "");
+        if (initialDraft.addedStudies !== undefined) setAddedStudies(initialDraft.addedStudies || []);
+      });
     } else {
-      setEditingCaseId(null);
+      queueMicrotask(() => {
+        setEditingCaseId(null);
+      });
     }
   }, [initialDraft]);
 

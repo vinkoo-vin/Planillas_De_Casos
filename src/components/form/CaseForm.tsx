@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { StudyCatalogItem, AddedStudy, SavedCase, CaseDraft } from "@/types/clinical";
+import React from "react";
+import { StudyCatalogItem, SavedCase, CaseDraft } from "@/types/clinical";
 import { KeywordsSection } from "./KeywordsSection";
 import { PhysicalExamSection } from "./PhysicalExamSection";
 import { StudiesSection } from "./StudiesSection";
