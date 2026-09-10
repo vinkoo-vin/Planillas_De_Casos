@@ -163,7 +163,7 @@ export const StudiesSection = React.memo(function StudiesSection({
       </div>
 
       {/* CAJA DE ADICIÓN DE ESTUDIO */}
-      <div className="add-study-box p-5 rounded-xl border border-border-subtle bg-surface-subtle mb-6">
+      <div className="add-study-box p-5 rounded-xl border border-border-subtle bg-surface-subtle shadow-[var(--shadow-inset-sm)] mb-6">
         <div className="study-form-grid grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-4 mb-4">
           <div className="form-group">
             <label htmlFor="studySelect" className="block text-sm font-semibold text-text-main mb-1.5 flex items-center justify-between">
@@ -210,8 +210,8 @@ export const StudiesSection = React.memo(function StudiesSection({
                 onClick={() => setStudyIsAdequate("si")}
                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   studyIsAdequate === "si"
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-500 shadow-xs"
-                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main"
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-500 shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
+                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] hover:-translate-y-[0.5px]"
                 }`}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "si" ? "text-emerald-500" : "opacity-40"}>
@@ -227,8 +227,8 @@ export const StudiesSection = React.memo(function StudiesSection({
                 onClick={() => setStudyIsAdequate("no")}
                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   studyIsAdequate === "no"
-                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-2 border-rose-500 shadow-xs"
-                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main"
+                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-2 border-rose-500 shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
+                    : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] hover:-translate-y-[0.5px]"
                 }`}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "no" ? "text-rose-500" : "opacity-40"}>
@@ -425,7 +425,7 @@ export const StudiesSection = React.memo(function StudiesSection({
           {addedStudies.map((s, index) => (
             <div
               key={index}
-              className="study-item-card p-4 rounded-xl border border-border-subtle bg-surface-subtle"
+              className="study-item-card p-4 rounded-xl border border-border-subtle bg-card-bg shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] transition-all duration-200"
             >
               <div className="study-header-line flex items-center justify-between gap-3 mb-2">
                 <strong className="text-text-main text-sm font-bold">{s.name}</strong>

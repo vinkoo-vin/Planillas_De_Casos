@@ -59,7 +59,7 @@ export interface CaseDraft {
   addedStudies?: AddedStudy[];
 }
 
-export type ThemeKey = "teal" | "warm" | "dark" | "emerald";
+export type ThemeKey = "teal" | "warm" | "dark" | "emerald" | "neumorphic";
 
 export interface ThemeOption {
   id: ThemeKey;
@@ -74,4 +74,5 @@ export const THEMES: ThemeOption[] = [
   { id: "warm", name: "Pediátrico Solar", label: "Solar", dotPrimary: "#DD3506", dotSecondary: "#FE750A" },
   { id: "dark", name: "Cirugía Midnight", label: "Midnight", dotPrimary: "#06B6D4", dotSecondary: "#0A0F1D" },
   { id: "emerald", name: "Quirófano Esmeralda", label: "Esmeralda", dotPrimary: "#10B981", dotSecondary: "#04130F" },
+  { id: "neumorphic", name: "Neumorphic Matrix", label: "Neumórfico", dotPrimary: "#006666", dotSecondary: "#E7E5E4" },
 ];

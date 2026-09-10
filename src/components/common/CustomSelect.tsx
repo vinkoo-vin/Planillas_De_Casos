@@ -144,8 +144,8 @@ export function CustomSelect({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-medium transition-all duration-200 outline-none
           ${isOpen
-            ? "border-[1.5px] border-[var(--teal)] shadow-[0_0_0_3px_var(--primary-light)] bg-[var(--card-bg)]"
-            : "border-[1.5px] border-[var(--border-subtle)] hover:border-[var(--card-border)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)]"
+            ? "border-[1.5px] border-[var(--teal)] shadow-[var(--shadow-inset-sm),0_0_0_3px_var(--primary-light)] bg-[var(--card-bg)]"
+            : "border-[1.5px] border-[var(--border-subtle)] hover:border-[var(--card-border)] bg-[var(--surface-subtle)] hover:bg-[var(--surface-hover)] shadow-[var(--shadow-inset-sm)]"
           }
           ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
         `}
@@ -215,7 +215,7 @@ export function CustomSelect({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute z-50 top-full left-0 right-0 mt-1.5 rounded-2xl border-[1.5px] border-[var(--card-border)] bg-[var(--card-bg)] shadow-[0_16px_40px_-6px_rgba(0,0,0,0.22),0_4px_16px_-2px_rgba(0,0,0,0.12)] backdrop-blur-xl overflow-hidden animate-scaleUp"
+          className="absolute z-50 top-full left-0 right-0 mt-1.5 rounded-2xl border-[1.5px] border-[var(--card-border)] bg-[var(--card-bg)] shadow-[var(--shadow-extruded-lg),0_16px_40px_-6px_rgba(0,0,0,0.22)] backdrop-blur-xl overflow-hidden animate-scaleUp"
         >
           {/* BUSCADOR INTEGRADO */}
           {searchable && (

@@ -13,7 +13,7 @@ export function ThemeSwitcher() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("vinko_theme") as ThemeKey | null;
-      if (saved && ["teal", "warm", "dark", "emerald"].includes(saved)) {
+      if (saved && ["teal", "warm", "dark", "emerald", "neumorphic"].includes(saved)) {
         setCurrentTheme(saved);
         document.documentElement.setAttribute("data-theme", saved);
       }

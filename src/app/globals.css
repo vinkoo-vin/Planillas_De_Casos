@@ -1,5 +1,5 @@
 /* 1. TYPOGRAPHY & TAILWIND INITIALIZATION */
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 /* 2. TAILWIND v4 TOKEN MAPPINGS — inline mode so utilities reference CSS vars dynamically */
@@ -41,9 +41,18 @@
   --color-danger: var(--danger);
   --color-danger-light: var(--danger-light);
 
+  /* Neumorphic shadow tokens */
+  --shadow-extruded-xs: var(--shadow-extruded-xs);
+  --shadow-extruded-sm: var(--shadow-extruded-sm);
+  --shadow-extruded-md: var(--shadow-extruded-md);
+  --shadow-extruded-lg: var(--shadow-extruded-lg);
+  --shadow-inset-sm: var(--shadow-inset-sm);
+  --shadow-inset-md: var(--shadow-inset-md);
+
   /* Font families */
   --font-sans: var(--font);
   --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Space Mono', monospace;
 }
 
 /* 3. VIEW TRANSITIONS API: circle-blur-top-left (theme-toggle.rdsx.dev) */
@@ -86,7 +95,7 @@
 }
 
 /* ==========================================================================
-   4. DESIGN TOKENS: 4 THEMES
+   4. DESIGN TOKENS: 5 THEMES (WITH NEUMORPHIC DUAL-LIGHT ELEVATION)
    ========================================================================== */
 
 /* TEMA 1: TEAL CLÍNICO (Default / Luz Médica) */
@@ -99,11 +108,11 @@
   --color-gray-bg: #F1F5F9;
 
   --bg: #F1F5F9;
-  --topbar-bg: rgba(254, 254, 254, 0.90);
-  --card-bg: #FFFFFF;
+  --topbar-bg: rgba(241, 245, 249, 0.92);
+  --card-bg: #F8FAFC;
   --card-border: #E2E8F0;
-  --card-shadow: 0 4px 20px -2px rgba(25, 66, 103, 0.07), 0 2px 8px -1px rgba(25, 66, 103, 0.04);
-  --card-hover-shadow: 0 10px 25px -4px rgba(25, 66, 103, 0.12);
+  --card-shadow: var(--shadow-extruded-md);
+  --card-hover-shadow: var(--shadow-extruded-lg);
 
   --primary: #194267;
   --primary-hover: #12304d;
@@ -130,11 +139,23 @@
   --danger: #dc2626;
   --danger-light: #fee2e2;
 
-  --input-bg: #FFFFFF;
+  --input-bg: #F1F5F9;
   --input-border: #CBD5E1;
-  --surface-subtle: #F8FAFC;
-  --surface-hover: #F1F5F9;
+  --surface-subtle: #F1F5F9;
+  --surface-hover: #E2E8F0;
   --border-subtle: #E2E8F0;
+
+  /* Calibración neumórfica Teal */
+  --neu-light: #FFFFFF;
+  --neu-dark: rgba(25, 66, 103, 0.08);
+  --neu-dark-inset: rgba(25, 66, 103, 0.10);
+
+  --shadow-extruded-xs: -1.5px -1.5px 3px var(--neu-light), 1.5px 1.5px 4px var(--neu-dark);
+  --shadow-extruded-sm: -2px -2px 5px var(--neu-light), 2.5px 2.5px 6px var(--neu-dark);
+  --shadow-extruded-md: -4px -4px 10px var(--neu-light), 4px 4px 12px var(--neu-dark);
+  --shadow-extruded-lg: -6px -6px 16px var(--neu-light), 6px 6px 18px var(--neu-dark);
+  --shadow-inset-sm: inset 2px 2px 4px var(--neu-dark-inset), inset -2px -2px 4px var(--neu-light);
+  --shadow-inset-md: inset 3px 3px 6px var(--neu-dark-inset), inset -3px -3px 6px var(--neu-light);
 
   --font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -142,7 +163,7 @@
   color-scheme: light;
 }
 
-/* TEMA 2: PEDIÁTRICO SOLAR (Paleta Solicitada: #DD3506, #FE750A, #FBC02A, #FDD87C, #FEFEFE) */
+/* TEMA 2: PEDIÁTRICO SOLAR (Paleta: #DD3506, #FE750A, #FBC02A, #FDD87C, #FEFEFE) */
 [data-theme="warm"] {
   --color-navy: #DD3506;
   --color-teal: #FE750A;
@@ -151,11 +172,11 @@
   --color-gray-bg: #FFFDF9;
 
   --bg: #FFFDF9;
-  --topbar-bg: rgba(254, 254, 254, 0.92);
-  --card-bg: #FEFEFE;
+  --topbar-bg: rgba(255, 253, 249, 0.94);
+  --card-bg: #FFFDF9;
   --card-border: #FDD87C;
-  --card-shadow: 0 4px 20px -2px rgba(221, 53, 6, 0.08), 0 2px 8px -1px rgba(254, 117, 10, 0.05);
-  --card-hover-shadow: 0 10px 25px -4px rgba(221, 53, 6, 0.15);
+  --card-shadow: var(--shadow-extruded-md);
+  --card-hover-shadow: var(--shadow-extruded-lg);
 
   --primary: #DD3506;
   --primary-hover: #BF2D04;
@@ -182,11 +203,26 @@
   --danger: #DC2626;
   --danger-light: #FEE2E2;
 
-  --input-bg: #FEFEFE;
+  --input-bg: #FFFDF9;
   --input-border: #FDD87C;
   --surface-subtle: #FFF9ED;
   --surface-hover: #FEF0D4;
   --border-subtle: rgba(253, 216, 124, 0.70);
+
+  /* Calibración neumórfica Solar */
+  --neu-light: #FFFFFF;
+  --neu-dark: rgba(221, 53, 6, 0.09);
+  --neu-dark-inset: rgba(221, 53, 6, 0.12);
+
+  --shadow-extruded-xs: -1.5px -1.5px 3px var(--neu-light), 1.5px 1.5px 4px var(--neu-dark);
+  --shadow-extruded-sm: -2px -2px 5px var(--neu-light), 2.5px 2.5px 6px var(--neu-dark);
+  --shadow-extruded-md: -4px -4px 10px var(--neu-light), 4px 4px 12px var(--neu-dark);
+  --shadow-extruded-lg: -6px -6px 16px var(--neu-light), 6px 6px 18px var(--neu-dark);
+  --shadow-inset-sm: inset 2px 2px 4px var(--neu-dark-inset), inset -2px -2px 4px var(--neu-light);
+  --shadow-inset-md: inset 3px 3px 6px var(--neu-dark-inset), inset -3px -3px 6px var(--neu-light);
+
+  --font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   color-scheme: light;
 }
@@ -196,7 +232,7 @@
   color: #DD3506;
 }
 
-/* TEMA 3: CIRUGÍA MIDNIGHT (Oscuro Profundo / Alta Visibilidad) */
+/* TEMA 3: CIRUGÍA MIDNIGHT (Dark Neumorphic / Alta Visibilidad) */
 [data-theme="dark"] {
   --color-navy: #38BDF8;
   --color-teal: #06B6D4;
@@ -205,11 +241,11 @@
   --color-gray-bg: #0A0F1D;
 
   --bg: #0A0F1D;
-  --topbar-bg: rgba(10, 15, 29, 0.88);
+  --topbar-bg: rgba(10, 15, 29, 0.90);
   --card-bg: #10192C;
   --card-border: #1E293B;
-  --card-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.50), 0 2px 8px -1px rgba(6, 182, 212, 0.08);
-  --card-hover-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.65);
+  --card-shadow: var(--shadow-extruded-md);
+  --card-hover-shadow: var(--shadow-extruded-lg);
 
   --primary: #38BDF8;
   --primary-hover: #0EA5E9;
@@ -236,11 +272,26 @@
   --danger: #F87171;
   --danger-light: rgba(239, 68, 68, 0.18);
 
-  --input-bg: #0F172A;
-  --input-border: #334155;
-  --surface-subtle: #131E35;
-  --surface-hover: #1E293B;
+  --input-bg: #0C1424;
+  --input-border: #1E293B;
+  --surface-subtle: #0E1628;
+  --surface-hover: #19243C;
   --border-subtle: #1E293B;
+
+  /* Calibración neumórfica Midnight (Dark Neumorphism) */
+  --neu-light: rgba(255, 255, 255, 0.04);
+  --neu-dark: rgba(0, 0, 0, 0.72);
+  --neu-dark-inset: rgba(0, 0, 0, 0.88);
+
+  --shadow-extruded-xs: -1px -1px 3px var(--neu-light), 2px 2px 5px var(--neu-dark);
+  --shadow-extruded-sm: -2px -2px 6px var(--neu-light), 3px 3px 8px var(--neu-dark);
+  --shadow-extruded-md: -3px -3px 8px var(--neu-light), 5px 5px 14px var(--neu-dark);
+  --shadow-extruded-lg: -4px -4px 12px var(--neu-light), 7px 7px 20px var(--neu-dark);
+  --shadow-inset-sm: inset 2px 2px 5px var(--neu-dark-inset), inset -1px -1px 3px var(--neu-light);
+  --shadow-inset-md: inset 3px 3px 7px var(--neu-dark-inset), inset -2px -2px 5px var(--neu-light);
+
+  --font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   color-scheme: dark;
 }
@@ -276,11 +327,11 @@
   --color-gray-bg: #F0FDF4;
 
   --bg: #F0FDF4;
-  --topbar-bg: rgba(240, 253, 244, 0.90);
-  --card-bg: #FFFFFF;
+  --topbar-bg: rgba(240, 253, 244, 0.92);
+  --card-bg: #F7FEFA;
   --card-border: #D1FAE5;
-  --card-shadow: 0 4px 20px -2px rgba(6, 78, 59, 0.07), 0 2px 8px -1px rgba(16, 185, 129, 0.04);
-  --card-hover-shadow: 0 10px 25px -4px rgba(6, 78, 59, 0.12);
+  --card-shadow: var(--shadow-extruded-md);
+  --card-hover-shadow: var(--shadow-extruded-lg);
 
   --primary: #10B981;
   --primary-hover: #059669;
@@ -307,11 +358,26 @@
   --danger: #DC2626;
   --danger-light: #FEE2E2;
 
-  --input-bg: #FFFFFF;
+  --input-bg: #F0FDF4;
   --input-border: #A7F3D0;
   --surface-subtle: #ECFDF5;
   --surface-hover: #D1FAE5;
   --border-subtle: #D1FAE5;
+
+  /* Calibración neumórfica Esmeralda */
+  --neu-light: #FFFFFF;
+  --neu-dark: rgba(6, 78, 59, 0.08);
+  --neu-dark-inset: rgba(6, 78, 59, 0.11);
+
+  --shadow-extruded-xs: -1.5px -1.5px 3px var(--neu-light), 1.5px 1.5px 4px var(--neu-dark);
+  --shadow-extruded-sm: -2px -2px 5px var(--neu-light), 2.5px 2.5px 6px var(--neu-dark);
+  --shadow-extruded-md: -4px -4px 10px var(--neu-light), 4px 4px 12px var(--neu-dark);
+  --shadow-extruded-lg: -6px -6px 16px var(--neu-light), 6px 6px 18px var(--neu-dark);
+  --shadow-inset-sm: inset 2px 2px 4px var(--neu-dark-inset), inset -2px -2px 4px var(--neu-light);
+  --shadow-inset-md: inset 3px 3px 6px var(--neu-dark-inset), inset -3px -3px 6px var(--neu-light);
+
+  --font: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   color-scheme: light;
 }
@@ -319,6 +385,128 @@
 [data-theme="emerald"] ::selection {
   background: rgba(16, 185, 129, 0.25);
   color: #064E3B;
+}
+
+/* TEMA 5: NEUMORPHIC MATRIX (Stone Monocromo / AI Club Neumorphism) */
+[data-theme="neumorphic"] {
+  --color-navy: #006666;
+  --color-teal: #006666;
+  --color-mint: #00A63D;
+  --color-white: #E7E5E4;
+  --color-gray-bg: #E7E5E4;
+
+  --bg: #E7E5E4;
+  --topbar-bg: rgba(231, 229, 228, 0.94);
+  --card-bg: #E7E5E4;
+  --card-border: rgba(30, 41, 56, 0.12);
+  --card-shadow: var(--shadow-extruded-md);
+  --card-hover-shadow: var(--shadow-extruded-lg);
+
+  --primary: #006666;
+  --primary-hover: #004d4d;
+  --primary-light: rgba(0, 102, 102, 0.12);
+  --primary-fg: #FFFFFF;
+
+  --teal: #006666;
+  --teal-hover: #004d4d;
+  --teal-text: #006666;
+  --teal-text-hover: #004d4d;
+  --teal-light: rgba(0, 102, 102, 0.12);
+  --teal-border: rgba(0, 102, 102, 0.35);
+  --teal-fg: #FFFFFF;
+
+  --mint: #00A63D;
+  --mint-dark: #007a2c;
+  --mint-light: rgba(0, 166, 61, 0.14);
+  --mint-border: rgba(0, 166, 61, 0.40);
+
+  --text-main: #14202E;
+  --text-body: #243242;
+  --text-muted: #566779;
+  --text-placeholder: #7B8C9F;
+  --danger: #FF2157;
+  --danger-light: rgba(255, 33, 87, 0.15);
+
+  --input-bg: #E7E5E4;
+  --input-border: rgba(30, 41, 56, 0.15);
+  --surface-subtle: #E2DFDE;
+  --surface-hover: #DAD7D5;
+  --border-subtle: rgba(30, 41, 56, 0.12);
+
+  /* Calibración neumórfica pura (Dual Light Top-Left + Inset Well) */
+  --neu-light: #FFFFFF;
+  --neu-dark: rgba(168, 162, 158, 0.52);
+  --neu-dark-inset: rgba(168, 162, 158, 0.62);
+
+  --shadow-extruded-xs: -1.5px -1.5px 3px var(--neu-light), 1.5px 1.5px 3.5px var(--neu-dark);
+  --shadow-extruded-sm: -2.5px -2.5px 5px var(--neu-light), 2.5px 2.5px 5px var(--neu-dark);
+  --shadow-extruded-md: -4px -4px 8px var(--neu-light), 4px 4px 8px var(--neu-dark);
+  --shadow-extruded-lg: -6px -6px 14px var(--neu-light), 6px 6px 14px var(--neu-dark);
+  --shadow-inset-sm: inset 2px 2px 4px var(--neu-dark-inset), inset -2px -2px 4px var(--neu-light);
+  --shadow-inset-md: inset 3px 3px 6px var(--neu-dark-inset), inset -3px -3px 6px var(--neu-light);
+
+  /* Tipografía híbrida de élite: Plus Jakarta Sans para lectura e interfaz fluida, JetBrains Mono para datos y métricas */
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  color-scheme: light;
+}
+
+[data-theme="neumorphic"] ::selection {
+  background: rgba(0, 102, 102, 0.25);
+  color: #006666;
+}
+
+/* REFINAMIENTOS TIPOGRÁFICOS DE ALTA PRECISIÓN: TEMA NEUMÓRFICO */
+[data-theme="neumorphic"] {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+}
+
+[data-theme="neumorphic"] h1,
+[data-theme="neumorphic"] h2,
+[data-theme="neumorphic"] h3,
+[data-theme="neumorphic"] .section-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-weight: 750;
+}
+
+[data-theme="neumorphic"] .section-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="neumorphic"] .kpi-value {
+  font-family: var(--font-mono);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+[data-theme="neumorphic"] .count-pill {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+[data-theme="neumorphic"] label {
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+[data-theme="neumorphic"] input,
+[data-theme="neumorphic"] textarea,
+[data-theme="neumorphic"] select {
+  font-family: var(--font);
+  letter-spacing: -0.01em;
+}
+
+[data-theme="neumorphic"] .btn {
+  font-family: var(--font);
+  letter-spacing: -0.01em;
 }
 
 /* ==========================================================================
@@ -375,6 +563,7 @@ textarea::placeholder {
     background: var(--input-bg);
     border: 1.5px solid var(--input-border);
     border-radius: 10px;
+    box-shadow: var(--shadow-inset-sm);
     color: var(--text-main);
     font-family: inherit;
     font-size: 0.92rem;
@@ -399,7 +588,7 @@ textarea::placeholder {
   select:focus,
   textarea:focus {
     border-color: var(--teal);
-    box-shadow: 0 0 0 3px var(--teal-light);
+    box-shadow: var(--shadow-inset-sm), 0 0 0 3px var(--teal-light);
     outline: none;
   }
 
@@ -668,13 +857,16 @@ textarea::placeholder {
   font-weight: 500;
   cursor: pointer;
   user-select: none;
-  transition: all 0.18s ease;
+  box-shadow: var(--shadow-extruded-xs);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .tag-chip:hover {
   border-color: var(--teal);
   background: var(--surface-hover);
   color: var(--teal-text);
+  box-shadow: var(--shadow-extruded-sm);
+  transform: translateY(-0.5px);
 }
 
 .tag-chip.active {
@@ -682,7 +874,7 @@ textarea::placeholder {
   border-color: var(--primary);
   color: var(--primary-fg, #FFFFFF);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-inset-sm);
 }
 
 .tag-chip svg {
@@ -719,8 +911,14 @@ textarea::placeholder {
   font-weight: 600;
   font-size: 0.92rem;
   color: var(--text-body);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-extruded-xs);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+}
+
+.toggle-label:hover {
+  border-color: var(--teal);
+  box-shadow: var(--shadow-extruded-sm);
 }
 
 .toggle-label svg {
@@ -738,7 +936,8 @@ textarea::placeholder {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--primary-fg, #FFFFFF);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-inset-sm);
+  transform: translateY(1px);
 }
 
 /* ==========================================================================
@@ -757,6 +956,7 @@ textarea::placeholder {
   border-radius: 12px;
   padding: 20px 22px;
   font-size: 0.88rem;
+  box-shadow: var(--shadow-inset-sm);
 }
 
 .guide-box h4 {
@@ -800,6 +1000,7 @@ textarea::placeholder {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  box-shadow: var(--shadow-inset-sm);
 }
 
 .prompt-helper-text {
@@ -825,12 +1026,20 @@ textarea::placeholder {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  transition: all 0.18s ease;
+  box-shadow: var(--shadow-extruded-xs);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
 }
 
 .copy-btn:hover {
   background: var(--teal);
+  box-shadow: var(--shadow-extruded-sm);
+  transform: translateY(-0.5px);
+}
+
+.copy-btn:active {
+  box-shadow: var(--shadow-inset-sm);
+  transform: translateY(1px);
 }
 
 .copy-btn svg {
@@ -847,6 +1056,7 @@ textarea::placeholder {
   padding: 24px 20px;
   text-align: center;
   background: var(--surface-subtle);
+  box-shadow: var(--shadow-inset-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -856,6 +1066,7 @@ textarea::placeholder {
 .file-drop-zone.dragover {
   border-color: var(--teal);
   background: var(--teal-light);
+  box-shadow: var(--shadow-inset-md);
 }
 
 .drop-zone-content {
@@ -870,12 +1081,13 @@ textarea::placeholder {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: var(--teal-light);
+  background: var(--card-bg);
   color: var(--teal);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 4px;
+  box-shadow: var(--shadow-extruded-sm);
 }
 
 .drop-icon-wrapper svg {
@@ -1060,20 +1272,25 @@ textarea::placeholder {
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.9rem;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   white-space: nowrap;
 }
 
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none !important;
 }
 
 .btn svg {
@@ -1085,32 +1302,56 @@ textarea::placeholder {
 .btn-primary {
   background: var(--primary);
   color: var(--primary-fg, #FFFFFF);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: var(--shadow-extruded-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-extruded-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow: var(--shadow-inset-sm);
+  transform: translateY(1px);
 }
 
 .btn-teal {
   background: var(--teal);
   color: var(--teal-fg, #FFFFFF);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: var(--shadow-extruded-sm);
 }
 
 .btn-teal:hover:not(:disabled) {
   background: var(--teal-hover);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-extruded-md);
+  transform: translateY(-1px);
+}
+
+.btn-teal:active:not(:disabled) {
+  box-shadow: var(--shadow-inset-sm);
+  transform: translateY(1px);
 }
 
 .btn-secondary {
   background: var(--card-bg);
   border: 1.5px solid var(--input-border);
   color: var(--text-main);
+  box-shadow: var(--shadow-extruded-xs);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--surface-hover);
   border-color: var(--text-main);
+  box-shadow: var(--shadow-extruded-sm);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+  box-shadow: var(--shadow-inset-sm);
+  transform: translateY(1px);
 }
 
 .btn-submit-case {
@@ -1120,26 +1361,32 @@ textarea::placeholder {
   font-weight: 700;
   background: var(--primary);
   color: var(--primary-fg, #FFFFFF);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-extruded-md);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-submit-case:hover:not(:disabled) {
   background: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1.5px);
+  box-shadow: var(--shadow-extruded-lg);
+}
+
+.btn-submit-case:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-inset-md);
 }
 
 .btn-submit-case:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ==========================================================================
