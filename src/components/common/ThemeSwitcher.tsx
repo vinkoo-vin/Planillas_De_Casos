@@ -4,18 +4,21 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { THEMES, ThemeKey } from "@/types/clinical";
 import { CloseIcon, CheckIcon } from "@/components/common/Icons";
 
+
 export function ThemeSwitcher() {
   const [currentTheme, setCurrentTheme] = useState<ThemeKey>("teal");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cargar tema guardado en localStorage al iniciar
+  // Cargar tema guardado en localStorage al iniciar sin provocar renders en cascada
   useEffect(() => {
     try {
       const saved = localStorage.getItem("vinko_theme") as ThemeKey | null;
       if (saved && ["teal", "warm", "dark", "emerald", "neumorphic"].includes(saved)) {
-        setCurrentTheme(saved);
         document.documentElement.setAttribute("data-theme", saved);
+        queueMicrotask(() => {
+          setCurrentTheme(saved);
+        });
       }
     } catch {
       // localStorage no disponible
@@ -63,8 +66,12 @@ export function ThemeSwitcher() {
         }
       };
 
-      if (typeof document !== "undefined" && "startViewTransition" in document) {
-        (document as any).startViewTransition(() => {
+      if (
+        typeof document !== "undefined" &&
+        "startViewTransition" in document &&
+        typeof (document as { startViewTransition?: unknown }).startViewTransition === "function"
+      ) {
+        (document as { startViewTransition: (cb: () => void | Promise<void>) => void }).startViewTransition(() => {
           updateDOM();
         });
       } else {
@@ -99,10 +106,10 @@ export function ThemeSwitcher() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-text-muted hover:text-text-main transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors cursor-pointer"
               aria-label="Cerrar paleta"
             >
-              <CloseIcon width={14} height={14} />
+              <CloseIcon width={16} height={16} />
             </button>
           </div>
 
