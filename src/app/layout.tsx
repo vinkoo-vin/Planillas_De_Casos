@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   description: "Sistema integral para la carga y simulación de casos clínicos pediátricos",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
     ],
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    shortcut: "/icon.svg?v=2",
+    apple: "/icon.svg?v=2",
   },
 };
 
