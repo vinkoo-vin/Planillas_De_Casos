@@ -2,6 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* 2. TAILWIND v4 TOKEN MAPPINGS — inline mode so utilities reference CSS vars dynamically */
 @theme inline {
   /* Colors that map 1:1 to CSS custom properties (change per theme) */

@@ -104,7 +104,7 @@ export function CaseForm({
               handleResetForm();
               if (onClearDraft) onClearDraft();
             }}
-            className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+            className="text-xs font-bold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
           >
             Cancelar edición y crear nuevo caso
           </button>

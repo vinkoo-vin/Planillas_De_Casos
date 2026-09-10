@@ -257,16 +257,21 @@ export function CaseDetailModal({
               {caseData.treatmentOptions?.map((t, i) => (
                 <div
                   key={i}
-                  className={`treatment-pill-item flex items-start gap-2.5 p-3 rounded-xl border ${
-                    t.isCorrect ? "correct border-emerald-400 bg-emerald-500/10" : "border-border-subtle bg-surface-subtle"
+                  className={`treatment-pill-item flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                    t.isCorrect
+                      ? "correct border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-500/40 shadow-xs"
+                      : "border-border-subtle bg-surface-subtle"
                   }`}
                 >
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                    style={{ background: t.isCorrect ? "#16A34A" : "#94A3B8" }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${
+                      t.isCorrect
+                        ? "bg-emerald-600 text-white"
+                        : "bg-surface-hover border border-border-subtle text-text-main"
+                    }`}
                   >
                     {t.isCorrect ? (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     ) : (
@@ -274,17 +279,22 @@ export function CaseDetailModal({
                     )}
                   </div>
                   <div className="flex-1 text-sm">
-                    <span className={`font-semibold ${t.isCorrect ? "text-emerald-700 dark:text-emerald-300" : "text-text-main"}`}>
-                      {t.description}
-                    </span>
-                    {t.isCorrect && (
-                      <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200">
-                        CORRECTA
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <span className="font-bold text-text-main text-sm sm:text-base leading-snug">
+                        {t.description}
                       </span>
-                    )}
+                      {t.isCorrect && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Correcta
+                        </span>
+                      )}
+                    </div>
                     {t.feedback && (
-                      <div className="mt-1.5 text-xs text-text-muted bg-card-bg/60 p-2 rounded-lg border border-border-subtle/50">
-                        <span className="font-semibold text-text-main">Feedback para el alumno: </span>
+                      <div className="mt-2 text-xs text-text-body bg-card-bg/80 p-2.5 rounded-lg border border-border-subtle leading-relaxed">
+                        <span className="font-bold text-text-main">Feedback pedagógico: </span>
                         <span>{t.feedback}</span>
                       </div>
                     )}

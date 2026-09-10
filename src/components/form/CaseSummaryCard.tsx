@@ -101,7 +101,11 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
                   <span className="w-3.5 inline-block text-center text-text-muted shrink-0">•</span>
                 )}
                 <span>{t.description}</span>
-                {t.isCorrect && <strong>[CORRECTA]</strong>}
+                {t.isCorrect && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white ml-1">
+                    CORRECTA
+                  </span>
+                )}
               </div>
             ))}
           </div>
