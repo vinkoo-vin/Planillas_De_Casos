@@ -25,19 +25,17 @@ export function Topbar({ activeTab, onTabChange, savedCasesCount }: TopbarProps)
       <div className="app-topbar-inner max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* LOGO Y MARCA */}
         <div
-          className="app-brand flex items-center gap-3 cursor-pointer select-none"
+          className="app-brand flex items-center gap-2.5 cursor-pointer select-none group"
           onClick={() => handleSelectTab("form")}
         >
-          <div className="brand-icon-box w-10 h-10 rounded-xl flex items-center justify-center shadow-md p-1.5 overflow-hidden">
-            <Image
-              src="/V1.svg"
-              alt="Vinko Logo"
-              width={26}
-              height={23}
-              priority
-              className="w-auto h-6 object-contain drop-shadow-sm"
-            />
-          </div>
+          <Image
+            src="/V1.svg"
+            alt="Vinko Logo"
+            width={34}
+            height={30}
+            priority
+            className="w-auto h-8 object-contain transition-transform duration-200 group-hover:scale-105"
+          />
           <div>
             <div className="brand-title text-xl font-extrabold tracking-tight">Vinko</div>
           </div>
