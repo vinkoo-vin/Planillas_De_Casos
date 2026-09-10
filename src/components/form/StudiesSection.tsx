@@ -395,7 +395,7 @@ export const StudiesSection = React.memo(function StudiesSection({
               </div>
               <button
                 type="button"
-                className="btn-remove-preview text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 cursor-pointer transition-colors"
+                className="btn-remove-preview text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 cursor-pointer transition-colors"
                 onClick={clearUploadedImage}
               >
                 Eliminar

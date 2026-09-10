@@ -215,7 +215,7 @@ export function CaseDetailModal({
                         <button
                           type="button"
                           onClick={() => setLightboxImage({ url: s.imageUrl!, title: s.imageName || s.studyCatalog?.name || "Estudio" })}
-                          className="text-[11px] font-bold text-teal hover:underline inline-flex items-center gap-1 cursor-pointer"
+                          className="text-[11px] font-bold text-teal-text hover:underline inline-flex items-center gap-1 cursor-pointer"
                         >
                           <ZoomInIcon width={12} height={12} />
                           Ver en Grande

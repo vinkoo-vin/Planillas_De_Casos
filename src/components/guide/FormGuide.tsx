@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { CaseDraft } from "@/types/clinical";
+import { AdequacyBadge } from "@/components/common/AdequacyBadge";
 import {
   REAL_CASE_EXAMPLES,
   GUIDE_SECTIONS,
@@ -254,7 +255,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                               {f.name}
                             </span>
                             {f.required ? (
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
                                 Requerido
                               </span>
                             ) : (
@@ -500,15 +501,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                           <div className="font-bold text-text-main">{st.name}</div>
                           <div className="text-text-muted text-[11px] mt-0.5">{st.findings}</div>
                         </div>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                            st.isAdequate
-                              ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                              : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                          }`}
-                        >
-                          {st.isAdequate ? "Adecuado" : "Inadecuado"}
-                        </span>
+                        <AdequacyBadge isAdequate={st.isAdequate} />
                       </div>
                     ))}
                   </div>
