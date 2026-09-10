@@ -26,15 +26,15 @@ export const TreatmentSection = React.memo(function TreatmentSection({
         </h3>
       </div>
 
-      <div className="split-layout grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5 items-start">
-        <div className="form-group">
+      <div className="split-layout grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5 items-stretch">
+        <div className="form-group flex flex-col h-full mb-0">
           <label htmlFor="treatmentOptions" className="block text-sm font-semibold text-text-main mb-1.5">
             Opciones de Tratamiento (Una por línea):
           </label>
           <textarea
             id="treatmentOptions"
-            rows={6}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm leading-relaxed"
+            rows={13}
+            className="w-full flex-1 min-h-[340px] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed resize-y"
             value={treatmentOptions}
             onChange={(e) => setTreatmentOptions(e.target.value)}
             placeholder="- Plan de hidratación parenteral y corrección hidroelectrolítica antes de cirugía [CORRECTA] | Feedback: Excelente. En estenosis pilórica la urgencia inicial es médica para estabilizar el medio interno.&#10;- Indicar pase inmediato a quirófano sin hidratación previa | Feedback: Grave riesgo de arritmias por alcalosis metabólica e hipopotasemia.&#10;- Administrar ranitidina oral y dar de alta | Feedback: Error que confunde reflujo fisiológico con obstrucción pilórica mecánica."
