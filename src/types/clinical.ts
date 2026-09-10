@@ -38,6 +38,7 @@ export interface SavedCase {
     id?: string;
     description: string;
     isCorrect: boolean;
+    feedback?: string | null;
     order?: number;
   }[];
 }

@@ -11,7 +11,7 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
   const reconstructedTreatments =
     savedCase.treatmentOptions && savedCase.treatmentOptions.length > 0
       ? savedCase.treatmentOptions
-          .map((t) => `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}`)
+          .map((t) => `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}${t.feedback ? ` | Feedback: ${t.feedback}` : ""}`)
           .join("\n")
       : "";
 

@@ -4,6 +4,7 @@ import type { AddedStudy } from "@/types/clinical";
 export interface TreatmentOptionParsed {
   description: string;
   isCorrect: boolean;
+  feedback: string | null;
   order: number;
 }
 
@@ -25,14 +26,18 @@ export interface CasePayloadValidation {
 /**
  * Valida los campos obligatorios para la creación o actualización de un caso clínico.
  */
-export function validateCaseInput(body: Record<string, any>): CasePayloadValidation {
-  if (!body.title?.trim()) {
+export function validateCaseInput(body: Record<string, unknown>): CasePayloadValidation {
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const clinicalHistory = typeof body.clinicalHistory === "string" ? body.clinicalHistory.trim() : "";
+  const painLevel = typeof body.painLevel === "string" ? body.painLevel.trim() : "";
+
+  if (!title) {
     return { isValid: false, error: "El título del caso es obligatorio" };
   }
-  if (!body.clinicalHistory?.trim()) {
+  if (!clinicalHistory) {
     return { isValid: false, error: "La descripción clínica es obligatoria" };
   }
-  if (!body.painLevel?.trim()) {
+  if (!painLevel) {
     return { isValid: false, error: "El hallazgo del examen físico o nivel de dolor es obligatorio" };
   }
   return { isValid: true };
@@ -52,14 +57,30 @@ export function parseTreatmentRaw(treatmentRaw?: string | null): TreatmentOption
 
   return lines.map((line, index) => {
     const isCorrect = /\[CORRECTA\]/i.test(line);
-    const cleanDescription = line
-      .replace(/\[CORRECTA\]/gi, "")
+
+    // Soporte para feedback pedagógico: "| Feedback: ...", "| Devolución: ...", o "[FEEDBACK: ...]"
+    let feedback: string | null = null;
+    let textToClean = line.replace(/\[CORRECTA\]/gi, "");
+
+    const feedbackPipeMatch = textToClean.match(/\|\s*(?:feedback|devoluci[oó]n)\s*:\s*(.+)$/i);
+    const feedbackBracketMatch = textToClean.match(/\[(?:feedback|devoluci[oó]n)\s*:\s*([^\]]+)\]/i);
+
+    if (feedbackPipeMatch) {
+      feedback = feedbackPipeMatch[1].trim();
+      textToClean = textToClean.replace(/\|\s*(?:feedback|devoluci[oó]n)\s*:\s*.+$/i, "");
+    } else if (feedbackBracketMatch) {
+      feedback = feedbackBracketMatch[1].trim();
+      textToClean = textToClean.replace(/\[(?:feedback|devoluci[oó]n)\s*:\s*[^\]]+\]/gi, "");
+    }
+
+    const cleanDescription = textToClean
       .replace(/^[-*•\d.]\s*/, "")
       .trim();
 
     return {
       description: cleanDescription || line,
       isCorrect,
+      feedback: feedback || null,
       order: index + 1,
     };
   });

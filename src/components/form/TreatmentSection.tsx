@@ -33,31 +33,39 @@ export const TreatmentSection = React.memo(function TreatmentSection({
           </label>
           <textarea
             id="treatmentOptions"
-            rows={5}
+            rows={6}
             className="w-full px-3.5 py-2.5 rounded-xl text-sm leading-relaxed"
             value={treatmentOptions}
             onChange={(e) => setTreatmentOptions(e.target.value)}
-            placeholder="- Plan de hidratación parenteral y corrección hidroelectrolítica antes de cirugía [CORRECTA]&#10;- Indicar pase inmediato a quirófano sin hidratación previa&#10;- Administrar ranitidina oral y dar de alta con pautas de alarma"
+            placeholder="- Plan de hidratación parenteral y corrección hidroelectrolítica antes de cirugía [CORRECTA] | Feedback: Excelente. En estenosis pilórica la urgencia inicial es médica para estabilizar el medio interno.&#10;- Indicar pase inmediato a quirófano sin hidratación previa | Feedback: Grave riesgo de arritmias por alcalosis metabólica e hipopotasemia.&#10;- Administrar ranitidina oral y dar de alta | Feedback: Error que confunde reflujo fisiológico con obstrucción pilórica mecánica."
           />
         </div>
 
         <div className="guide-box p-5 rounded-xl text-xs bg-surface-subtle border border-border-subtle">
-          <h4 className="font-bold text-text-main mb-2.5 flex items-center gap-2 text-sm">
+          <h4 className="font-bold text-text-main mb-2 flex items-center gap-2 text-sm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-teal-text">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
+              <circle cx="12" cy="10" r="8" />
+              <line x1="12" y1="14" x2="12" y2="10" />
+              <line x1="12" y1="6" x2="12.01" y2="6" />
             </svg>
-            Ejemplo de formato:
+            Sintaxis de Opciones y Feedback:
           </h4>
-          <pre className="font-mono text-xs text-text-main p-2.5 rounded-lg border border-border-subtle bg-card-bg whitespace-pre-wrap leading-relaxed mb-2.5">
-{`- Opción 1: Rehidratación parenteral y corrección electrolítica [CORRECTA]
-- Opción 2: Cirugía de urgencia sin hidratar
-- Opción 3: Cambio de fórmula láctea y alta`}
+          <pre className="font-mono text-xs text-text-main p-3 rounded-lg border border-border-subtle bg-card-bg whitespace-pre-wrap leading-relaxed mb-3">
+{`- Rehidratación parenteral y corrección electrolítica [CORRECTA] | Feedback: Fundamental estabilizar medio interno antes de inducir anestesia.
+- Cirugía de urgencia sin hidratar | Feedback: Riesgo severo de arritmia intraoperatoria por alcalosis.
+- Cambio de fórmula láctea y alta | Feedback: Retrasa el diagnóstico de una obstrucción pilórica.`}
           </pre>
-          <p className="text-text-body">
-            El sistema detectará automáticamente la etiqueta <code>[CORRECTA]</code> y registrará cada alternativa en la base de datos.
-          </p>
+          <div className="space-y-1.5 text-text-body">
+            <p>
+              <strong className="text-text-main">• [CORRECTA]:</strong> Marca la conducta terapéutica acertada del caso clínico.
+            </p>
+            <p>
+              <strong className="text-text-main">• | Feedback:</strong> Es la <span className="font-semibold text-text-main">justificación médica</span> que el alumno leerá en el simulador al seleccionar esa alternativa (explica por qué acertó o qué peligro clínico representa el error).
+            </p>
+            <p className="text-[11px] text-text-muted italic pt-1">
+              * El campo de feedback es opcional; si no lo escribes, la opción se registrará igualmente.
+            </p>
+          </div>
         </div>
       </div>
 
