@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { StudyCatalogItem, AddedStudy } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
 import { AdequacyBadge } from "@/components/common/AdequacyBadge";
-import { ZoomInIcon, CheckIcon } from "@/components/common/Icons";
+import { ZoomInIcon, CheckIcon, TrashIcon } from "@/components/common/Icons";
 import { CustomSelect } from "@/components/common/CustomSelect";
 
 import { compressImageToWebP } from "@/lib/image-compression";
@@ -210,11 +210,11 @@ export const StudiesSection = React.memo(function StudiesSection({
                 onClick={() => setStudyIsAdequate("si")}
                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   studyIsAdequate === "si"
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-500 shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
+                    ? "bg-mint-light text-mint-dark border-2 border-mint shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
                     : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] hover:-translate-y-[0.5px]"
                 }`}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "si" ? "text-emerald-500" : "opacity-40"}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "si" ? "text-mint-dark" : "opacity-40"}>
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 <div className="text-left leading-tight">
@@ -227,11 +227,11 @@ export const StudiesSection = React.memo(function StudiesSection({
                 onClick={() => setStudyIsAdequate("no")}
                 className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   studyIsAdequate === "no"
-                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-2 border-rose-500 shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
+                    ? "bg-danger-light text-danger border-2 border-danger shadow-[var(--shadow-inset-sm)] translate-y-[1px]"
                     : "bg-surface-subtle text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-main shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] hover:-translate-y-[0.5px]"
                 }`}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "no" ? "text-rose-500" : "opacity-40"}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={studyIsAdequate === "no" ? "text-danger" : "opacity-40"}>
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -356,10 +356,12 @@ export const StudiesSection = React.memo(function StudiesSection({
                 }
                 title="Haga clic para ampliar imagen"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={uploadedImage.dataUrl}
                   alt={uploadedImage.name}
                   loading="lazy"
+                  decoding="async"
                   className="preview-thumb w-16 h-16 rounded-lg object-cover border border-card-border transition-transform group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/30 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
@@ -425,47 +427,80 @@ export const StudiesSection = React.memo(function StudiesSection({
           {addedStudies.map((s, index) => (
             <div
               key={index}
-              className="study-item-card p-4 rounded-xl border border-border-subtle bg-card-bg shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] transition-all duration-200"
+              className="study-item-card p-3 sm:p-4 rounded-xl border border-border-subtle bg-card-bg shadow-[var(--shadow-extruded-xs)] hover:shadow-[var(--shadow-extruded-sm)] transition-all duration-200 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4"
             >
-              <div className="study-header-line flex items-center justify-between gap-3 mb-2">
-                <strong className="text-text-main text-sm font-bold">{s.name}</strong>
-                <AdequacyBadge isAdequate={s.isAdequate} />
-              </div>
-              <div className="text-xs text-text-body mb-2">
-                <strong>Hallazgo para el alumno:</strong> {s.findings}
-              </div>
+              {/* MINIATURA HORIZONTAL A LA IZQUIERDA (SI TIENE IMAGEN) */}
               {s.imageUrl && (
-                <div className="mb-2">
-                  <span className="text-[11px] text-text-muted block mb-1">Imagen adjunta (clic para ampliar):</span>
-                  <div
-                    className="inline-block relative group cursor-zoom-in"
-                    onClick={() =>
-                      setLightboxImage({
-                        url: s.imageUrl!,
-                        title: s.name,
-                        subtitle: s.imageName || "Estudio complementario",
-                      })
-                    }
-                  >
-                    <img
-                      src={s.imageUrl}
-                      alt={s.imageName || s.name}
-                      className="max-h-36 rounded-lg border border-border-subtle object-contain bg-slate-950/80 p-1 transition-transform group-hover:brightness-105"
-                    />
-                    <div className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ZoomInIcon width={14} height={14} />
-                    </div>
+                <div
+                  className="relative group cursor-zoom-in w-full sm:w-44 md:w-52 h-28 sm:h-28 rounded-lg border border-border-subtle bg-slate-950/80 overflow-hidden shrink-0 flex items-center justify-center transition-all hover:brightness-105"
+                  onClick={() =>
+                    setLightboxImage({
+                      url: s.imageUrl!,
+                      title: s.name,
+                      subtitle: s.imageName || "Estudio complementario",
+                    })
+                  }
+                  title="Clic para ampliar imagen en alta resolución"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={s.imageUrl}
+                    alt={s.imageName || s.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full max-h-28 object-contain p-1.5 transition-transform duration-200 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-semibold backdrop-blur-[1px]">
+                    <ZoomInIcon width={14} height={14} />
+                    <span>Ampliar</span>
                   </div>
+                  <span className="absolute bottom-1 right-1 bg-black/75 text-white/90 text-[10px] px-1.5 py-0.5 rounded font-mono pointer-events-none">
+                    HD
+                  </span>
                 </div>
               )}
-              <div className="text-right">
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 cursor-pointer transition-colors"
-                  onClick={() => handleRemoveStudy(index)}
-                >
-                  Quitar este estudio
-                </button>
+
+              {/* CONTENIDO PRINCIPAL A LA DERECHA */}
+              <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+                <div>
+                  {/* LÍNEA SUPERIOR: TÍTULO, BADGE Y BOTÓN QUITAR */}
+                  <div className="flex items-start justify-between gap-2.5 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <strong className="text-text-main text-sm sm:text-base font-bold truncate">
+                        {s.name}
+                      </strong>
+                      <AdequacyBadge isAdequate={s.isAdequate} />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger hover:text-danger/80 bg-danger-light/50 hover:bg-danger-light px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0"
+                      onClick={() => handleRemoveStudy(index)}
+                      title="Quitar este estudio del caso"
+                    >
+                      <TrashIcon width={13} height={13} />
+                      <span>Quitar</span>
+                    </button>
+                  </div>
+
+                  {/* HALLAZGOS PARA EL ALUMNO */}
+                  <div className="text-xs sm:text-sm text-text-body bg-surface-subtle/70 rounded-lg p-2.5 border border-border-subtle/60 leading-relaxed">
+                    <span className="font-bold text-text-main">Hallazgo para el alumno: </span>
+                    <span className="text-text-body">{s.findings || "Sin hallazgos especificados."}</span>
+                  </div>
+                </div>
+
+                {/* METADATOS INFERIORES */}
+                {s.imageName && (
+                  <div className="text-[11px] text-text-muted flex items-center gap-1.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span>Archivo: <span className="font-mono text-text-body font-medium">{s.imageName}</span></span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

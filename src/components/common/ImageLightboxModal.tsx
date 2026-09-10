@@ -86,9 +86,11 @@ export function ImageLightboxModal({
 
         {/* CONTENEDOR DE LA IMAGEN CON FONDO OSCURO PARA ALTO CONTRASTE */}
         <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/90 min-h-[300px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt={title || "Imagen clínica ampliada"}
+            decoding="async"
             className="max-h-[75vh] max-w-full object-contain rounded-lg shadow-lg select-none"
           />
         </div>

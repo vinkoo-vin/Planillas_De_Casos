@@ -226,10 +226,12 @@ export function CaseDetailModal({
                         className="relative group cursor-pointer overflow-hidden rounded-xl border border-border-subtle bg-black/60 max-w-sm"
                         title="Haga clic para ampliar la imagen en alta definición"
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={s.imageUrl}
                           alt={s.imageName || s.studyCatalog?.name || "Estudio"}
                           loading="lazy"
+                          decoding="async"
                           className="max-h-48 w-full object-contain transition-transform duration-200 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-[2px]">
@@ -279,6 +281,12 @@ export function CaseDetailModal({
                       <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200">
                         CORRECTA
                       </span>
+                    )}
+                    {t.feedback && (
+                      <div className="mt-1.5 text-xs text-text-muted bg-card-bg/60 p-2 rounded-lg border border-border-subtle/50">
+                        <span className="font-semibold text-text-main">Feedback para el alumno: </span>
+                        <span>{t.feedback}</span>
+                      </div>
                     )}
                   </div>
                 </div>
