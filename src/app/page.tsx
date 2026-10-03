@@ -45,6 +45,7 @@ export default function Home() {
   const [inspectingCase, setInspectingCase] = useState<SavedCase | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   // Caché en memoria para fichas clínicas completas (acceso instantáneo en 0ms)
   const caseDetailsCache = useRef<Map<string, SavedCase>>(new Map());
@@ -193,6 +194,61 @@ export default function Home() {
     }, 3200);
   }, []);
 
+  const handleDeleteCase = useCallback(
+    async (id: string, title?: string) => {
+      const caseName = title ? `"${title}"` : "este caso clínico";
+      const confirmed = window.confirm(
+        `¿Está seguro de que desea eliminar ${caseName}?\n\nEsta acción eliminará permanentemente el caso, sus estudios complementarios y conductas terapéuticas de la base de datos.`
+      );
+      if (!confirmed) return;
+
+      try {
+        setIsDeletingId(id);
+        const res = await fetch(`/api/cases?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const json = await res.json();
+        if (!json.success) {
+          throw new Error(json.error || "No se pudo eliminar el caso");
+        }
+
+        // 1. Quitar de la lista en memoria
+        setSavedCasesList((prev) => prev.filter((c) => c.id !== id));
+
+        // 2. Limpiar de la caché de detalles
+        caseDetailsCache.current.delete(id);
+
+        // 3. Cerrar el modal si estaba abierto con este caso
+        setInspectingCase((prev) => (prev?.id === id ? null : prev));
+
+        // 4. Si el formulario estaba editando este caso, cancelarlo
+        setFormDraft((prev) => (prev?.id === id ? null : prev));
+
+        handleNotify(
+          title
+            ? `Caso "${title}" eliminado correctamente`
+            : "Caso clínico eliminado correctamente"
+        );
+      } catch (err) {
+        console.error("Error al eliminar caso clínico:", err);
+        handleNotify(
+          err instanceof Error
+            ? `Error al eliminar: ${err.message}`
+            : "Error al eliminar el caso clínico"
+        );
+      } finally {
+        setIsDeletingId(null);
+      }
+    },
+    [handleNotify]
+  );
+
   const handleLoadCaseExample = useCallback((draft: CaseDraft) => {
     setFormDraft(draft);
     setActiveTab("form");
@@ -294,6 +350,8 @@ export default function Home() {
               onRefresh={fetchSavedCases}
               onInspect={handleInspectCase}
               onEdit={handleEditCase}
+              onDelete={handleDeleteCase}
+              deletingId={isDeletingId}
               onNewCaseClick={() => setActiveTab("form")}
               onPrefetch={handlePrefetchCase}
             />
@@ -315,6 +373,7 @@ export default function Home() {
             onClose={() => setInspectingCase(null)}
             onCopyNotice={handleNotify}
             onEditCase={handleEditCase}
+            onDeleteCase={handleDeleteCase}
           />
         )}
 

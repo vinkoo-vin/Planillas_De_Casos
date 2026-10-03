@@ -4,7 +4,7 @@ import React, { useEffect, useCallback, useState } from "react";
 import { SavedCase } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
 import { AdequacyBadge } from "@/components/common/AdequacyBadge";
-import { CloseIcon, EditIcon, ZoomInIcon } from "@/components/common/Icons";
+import { CloseIcon, EditIcon, TrashIcon, ZoomInIcon } from "@/components/common/Icons";
 import { formatCaseDate } from "@/lib/case-transformers";
 
 interface CaseDetailModalProps {
@@ -13,6 +13,7 @@ interface CaseDetailModalProps {
   onClose: () => void;
   onCopyNotice: (msg: string) => void;
   onEditCase?: (caseData: SavedCase) => void;
+  onDeleteCase?: (id: string, title: string) => void;
 }
 
 export function CaseDetailModal({
@@ -21,6 +22,7 @@ export function CaseDetailModal({
   onClose,
   onCopyNotice,
   onEditCase,
+  onDeleteCase,
 }: CaseDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
 
@@ -54,6 +56,23 @@ export function CaseDetailModal({
       >
         <EditIcon width={14} height={14} />
         Editar Caso
+      </button>
+    );
+  };
+
+  const renderDeleteButton = () => {
+    if (!onDeleteCase || !caseData) return null;
+    return (
+      <button
+        type="button"
+        className="btn border border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 cursor-pointer font-semibold shadow-sm transition-colors"
+        onClick={() => {
+          onDeleteCase(caseData.id, caseData.title);
+        }}
+        title="Eliminar este caso clínico"
+      >
+        <TrashIcon width={14} height={14} />
+        Eliminar Caso
       </button>
     );
   };
@@ -103,6 +122,7 @@ export function CaseDetailModal({
 
             <div className="flex items-center gap-2">
               {renderEditButton()}
+              {renderDeleteButton()}
               <button
                 type="button"
                 className="modal-close-btn w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors"
@@ -384,6 +404,7 @@ export function CaseDetailModal({
                 Copiar JSON
               </button>
               {renderEditButton()}
+              {renderDeleteButton()}
             </div>
             <button
               type="button"

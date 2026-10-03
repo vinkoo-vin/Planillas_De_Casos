@@ -219,3 +219,62 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = req.nextUrl;
+    let id = searchParams.get("id");
+
+    if (!id) {
+      try {
+        const body = await req.json();
+        if (body && typeof body.id === "string") {
+          id = body.id;
+        }
+      } catch {
+        // Body was empty or not valid JSON
+      }
+    }
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "El ID del caso es requerido para eliminarlo" },
+        { status: 400 }
+      );
+    }
+
+    const existingCase = await prisma.case.findUnique({
+      where: { id },
+      select: { id: true, title: true },
+    });
+
+    if (!existingCase) {
+      return NextResponse.json(
+        { success: false, error: "Caso clínico no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Eliminación en cascada de relaciones hijas configuradas en schema.prisma
+    await prisma.case.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `El caso clínico "${existingCase.title}" fue eliminado exitosamente`,
+      id,
+    });
+  } catch (error) {
+    console.error("[Casos] Error al eliminar caso clínico:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Error interno al eliminar el caso de la base de datos",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+

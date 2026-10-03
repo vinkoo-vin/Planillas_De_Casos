@@ -3,7 +3,7 @@
 import React, { useState, useDeferredValue, useMemo } from "react";
 import { SavedCase } from "@/types/clinical";
 import { formatCaseDate } from "@/lib/case-transformers";
-import { CloseIcon, EditIcon, RefreshIcon } from "@/components/common/Icons";
+import { CloseIcon, EditIcon, RefreshIcon, TrashIcon } from "@/components/common/Icons";
 
 interface CasesTableProps {
   cases: SavedCase[];
@@ -11,6 +11,8 @@ interface CasesTableProps {
   onRefresh: () => void;
   onInspect: (id: string) => void;
   onEdit?: (c: SavedCase) => void;
+  onDelete?: (id: string, title: string) => void;
+  deletingId?: string | null;
   onNewCaseClick: () => void;
   onPrefetch?: (id: string) => void;
 }
@@ -21,6 +23,8 @@ export const CasesTable = React.memo(function CasesTable({
   onRefresh,
   onInspect,
   onEdit,
+  onDelete,
+  deletingId,
   onNewCaseClick,
   onPrefetch,
 }: CasesTableProps) {
@@ -265,6 +269,18 @@ export const CasesTable = React.memo(function CasesTable({
                         </svg>
                         Ver Ficha
                       </button>
+                      {onDelete && (
+                        <button
+                          type="button"
+                          disabled={deletingId === c.id}
+                          className="btn-delete-case inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => onDelete(c.id, c.title)}
+                          title="Eliminar este caso clínico"
+                        >
+                          <TrashIcon width={13} height={13} />
+                          {deletingId === c.id ? "Eliminando..." : "Eliminar"}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
