@@ -119,7 +119,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
-              Módulos del Formulario (7)
+              Fases Clínicas ({guideSections.length})
             </button>
 
             <button
@@ -132,7 +132,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                 <path d="M8.5 2h7" />
                 <path d="M7 16h10" />
               </svg>
-              Casos Pediátricos Reales (3)
+              Casos Pediátricos Reales ({realCaseExamples.length})
             </button>
           </div>
 
@@ -155,7 +155,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar campo, tip o sintaxis..."
+                placeholder="Buscar campo, tip o fase..."
                 className="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-surface-subtle border border-border-subtle text-text-main focus:bg-card-bg transition-all"
               />
             </div>
@@ -163,10 +163,10 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
         </div>
       </div>
 
-      {/* VISTA 1: MÓDULOS DEL FORMULARIO DETALLADOS */}
+      {/* VISTA 1: FASES CLÍNICAS DETALLADAS */}
       {mainTab === "modules" && (
         <div className="space-y-6">
-          {/* SELECTOR RÁPIDO DE MÓDULO (1 A 7) */}
+          {/* SELECTOR RÁPIDO DE FASE */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
             <button
               type="button"
@@ -175,7 +175,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                 activeModuleNumber === "all" ? "active" : ""
               }`}
             >
-              Todos los Módulos (7)
+              Todas las Fases ({guideSections.length})
             </button>
 
             {guideSections.map((sec) => (
@@ -247,8 +247,8 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                   </h4>
 
                   <div className="grid grid-cols-1 gap-4">
-                    {sec.fields.map((f, idx) => (
-                      <div key={idx} className="guide-spec-block p-4 sm:p-5 space-y-3">
+                    {sec.fields.map((f) => (
+                      <div key={f.name} className="guide-spec-block p-4 sm:p-5 space-y-3">
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm sm:text-base text-text-main">
@@ -284,10 +284,10 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                             <span>Formato o contenido sugerido:</span>
                             <button
                               type="button"
-                              onClick={() => handleCopyText(f.example, `${sec.id}-${idx}`)}
+                              onClick={() => handleCopyText(f.example, `${sec.id}-${f.name}`)}
                               className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
                             >
-                              {copiedKey === `${sec.id}-${idx}` ? (
+                              {copiedKey === `${sec.id}-${f.name}` ? (
                                 <>
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <polyline points="20 6 9 17 4 12" />
@@ -414,67 +414,75 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* COLUMNA IZQUIERDA: TÍTULO, PALABRAS CLAVE E HISTORIA */}
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-1">
-                    1. Título Visible para el Alumno
+            {/* ESTRUCTURA CLÍNICA EN LAS 4 FASES */}
+            <div className="space-y-5">
+              {/* FASE 1: MOTIVO DE CONSULTA Y SEMIOLOGÍA */}
+              <div className="p-5 rounded-2xl bg-surface-subtle border border-border-subtle space-y-4">
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal/15 text-teal text-xs font-bold flex items-center justify-center">
+                      1
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-main">
+                      Fase 1: Motivo de Consulta y Semiología
+                    </span>
                   </div>
-                  <div className="font-semibold text-sm text-text-main">{activeExample.draft.title}</div>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal/10 text-teal border border-teal/20">
+                    Apertura del Caso
+                  </span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-2">
-                    2. Palabras Clave Vinculadas
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle">
+                    <div className="text-[11px] font-bold uppercase text-text-muted mb-1">
+                      Nombre / Título Académico
+                    </div>
+                    <div className="font-semibold text-sm text-text-main">
+                      {activeExample.draft.title}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeExample.draft.selectedKeywords?.map((kw, i) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card-bg border border-border-subtle text-text-main"
-                      >
-                        {kw}
-                      </span>
-                    ))}
+
+                  <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle">
+                    <div className="text-[11px] font-bold uppercase text-text-muted mb-1">
+                      Motivo de Consulta Inicial
+                    </div>
+                    <div className="font-semibold text-sm text-teal-text">
+                      {activeExample.draft.consultationReason}
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-1.5">
-                    3. Historia Clínica y Anamnesis
+                <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-2">
+                  <div className="text-[11px] font-bold uppercase text-text-muted">
+                    Historia Clínica y Anamnesis
                   </div>
                   <p className="text-xs leading-relaxed text-text-body">
                     {activeExample.draft.clinicalHistory}
                   </p>
                   {activeExample.draft.hasVideo && (
-                    <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-teal-text font-medium flex items-center gap-1.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polygon points="23 7 16 12 23 17 23 7" />
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                      </svg>
-                      {activeExample.draft.videoDescription}
+                    <div className="mt-2 pt-2 border-t border-border-subtle text-xs text-teal-text font-medium flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-teal/10 border border-teal/20 text-[10px] font-bold uppercase">
+                        Video
+                      </span>
+                      <span>{activeExample.draft.videoDescription}</span>
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* COLUMNA DERECHA: EXAMEN FÍSICO, ESTUDIOS Y TRATAMIENTO */}
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-1.5">
-                    4. Examen Físico y Nivel de Dolor
+                <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle">
+                  <div className="text-[11px] font-bold uppercase text-text-muted mb-1.5">
+                    Examen Físico y Nivel de Dolor
                   </div>
                   {activeExample.draft.isInteractiveExam ? (
                     <div className="text-xs space-y-1 text-text-body">
                       <div>
-                        <strong>Modo:</strong> Interactivo 3D (Hotspot)
+                        <strong>Modo:</strong> Interactivo 3D (Hotspot Anatómico)
                       </div>
                       <div>
-                        <strong>Zona:</strong> {activeExample.draft.examZone}
+                        <strong>Zona anatómica:</strong> {activeExample.draft.examZone}
                       </div>
                       <div>
-                        <strong>Punto Clave:</strong> {activeExample.draft.examRefPoint}
+                        <strong>Punto clave:</strong> {activeExample.draft.examRefPoint}
                       </div>
                     </div>
                   ) : (
@@ -483,37 +491,165 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                     </p>
                   )}
                   <div className="mt-2 pt-2 border-t border-border-subtle text-xs font-semibold text-rose-600 dark:text-rose-400">
-                    Dolor: {activeExample.draft.painLevel}
+                    Nivel de Dolor: {activeExample.draft.painLevel}
                   </div>
                 </div>
+              </div>
 
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-2">
-                    5. Estudios Complementarios ({activeExample.draft.addedStudies?.length})
+              {/* FASE 2: DIAGNÓSTICO */}
+              <div className="p-5 rounded-2xl bg-surface-subtle border border-border-subtle space-y-4">
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal/15 text-teal text-xs font-bold flex items-center justify-center">
+                      2
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-main">
+                      Fase 2: Diagnóstico y Estudios Complementarios ({activeExample.draft.addedStudies?.length || 0})
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    {activeExample.draft.addedStudies?.map((st, i) => (
-                      <div
-                        key={i}
-                        className="text-xs p-2 rounded-lg bg-card-bg border border-border-subtle flex items-start justify-between gap-2"
-                      >
-                        <div>
-                          <div className="font-bold text-text-main">{st.name}</div>
-                          <div className="text-text-muted text-[11px] mt-0.5">{st.findings}</div>
-                        </div>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal/10 text-teal border border-teal/20">
+                    Matriz Diagnóstica
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {activeExample.draft.addedStudies?.map((st, i) => (
+                    <div
+                      key={st.id || `${st.name}-${i}`}
+                      className="p-3 rounded-xl bg-card-bg border border-border-subtle space-y-1.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-bold text-xs sm:text-sm text-text-main">{st.name}</div>
                         <AdequacyBadge isAdequate={st.isAdequate} />
                       </div>
-                    ))}
+                      <div className="text-text-body text-xs leading-relaxed bg-surface-subtle/60 p-2.5 rounded-lg border border-border-subtle/50">
+                        <span className="font-semibold text-text-muted text-[11px] uppercase mr-1">
+                          Hallazgos:
+                        </span>
+                        {st.findings}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FASE 3: TRATAMIENTO */}
+              <div className="p-5 rounded-2xl bg-surface-subtle border border-border-subtle space-y-4">
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal/15 text-teal text-xs font-bold flex items-center justify-center">
+                      3
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-main">
+                      Fase 3: Tratamiento y Conductas Terapéuticas ({activeExample.draft.structuredTreatments?.length || 0})
+                    </span>
                   </div>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal/10 text-teal border border-teal/20">
+                    Conductas Estructuradas
+                  </span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-surface-subtle border border-border-subtle">
-                  <div className="text-xs font-bold uppercase text-text-muted mb-1.5">
-                    6. Opciones Terapéuticas con [CORRECTA]
+                <div className="space-y-2.5">
+                  {activeExample.draft.structuredTreatments?.map((t, i) => (
+                    <div
+                      key={t.id || `treatment-${i}`}
+                      className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-md bg-surface text-text-muted text-[11px] font-bold flex items-center justify-center border border-border-subtle">
+                            {t.order || i + 1}
+                          </span>
+                          <span className="text-xs sm:text-sm font-semibold text-text-main">
+                            {t.description}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-xs font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                            t.isCorrect
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                              : "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                          }`}
+                        >
+                          {t.isCorrect ? "✓ Conducta Correcta" : "✕ Conducta Incorrecta"}
+                        </span>
+                      </div>
+                      {t.feedback && (
+                        <div className="guide-callout-info text-xs p-2.5 rounded-lg flex items-start gap-2">
+                          <span className="font-bold text-teal-text shrink-0">💡 Feedback Docente:</span>
+                          <span className="text-text-body">{t.feedback}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FASE 4: RESUMEN DEL CASO */}
+              <div className="p-5 rounded-2xl bg-surface-subtle border border-border-subtle space-y-4">
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-subtle flex-wrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal/15 text-teal text-xs font-bold flex items-center justify-center">
+                      4
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-main">
+                      Fase 4: Resumen del Caso y Epílogo Teórico
+                    </span>
                   </div>
-                  <pre className="guide-code-preview p-2.5 rounded-lg text-xs leading-relaxed whitespace-pre-wrap">
-                    {activeExample.draft.treatmentOptions}
-                  </pre>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-teal/10 text-teal border border-teal/20">
+                    Revisión y Base Docente
+                  </span>
+                </div>
+
+                {activeExample.draft.clinicalSummary && (
+                  <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-1">
+                    <div className="text-[11px] font-bold uppercase text-text-muted">
+                      Resumen Clínico y Discusión Docente
+                    </div>
+                    <p className="text-xs leading-relaxed text-text-body">
+                      {activeExample.draft.clinicalSummary}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeExample.draft.epidemiology && (
+                    <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-1">
+                      <div className="text-[11px] font-bold uppercase text-text-muted">
+                        Epidemiología y Factores de Riesgo
+                      </div>
+                      <p className="text-xs leading-relaxed text-text-body">
+                        {activeExample.draft.epidemiology}
+                      </p>
+                    </div>
+                  )}
+
+                  {activeExample.draft.complications && (
+                    <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-1">
+                      <div className="text-[11px] font-bold uppercase text-text-muted">
+                        Complicaciones Principales
+                      </div>
+                      <p className="text-xs leading-relaxed text-text-body">
+                        {activeExample.draft.complications}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-card-bg border border-border-subtle space-y-2">
+                  <div className="text-[11px] font-bold uppercase text-text-muted">
+                    Palabras Clave Indexadas ({activeExample.draft.selectedKeywords?.length || 0})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeExample.draft.selectedKeywords?.map((kw) => (
+                      <span
+                        key={kw}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card-bg border border-border-subtle text-text-main"
+                      >
+                        #{kw}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
