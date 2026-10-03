@@ -29,8 +29,11 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
     id: savedCase.id,
     isEditing: true,
     title: savedCase.title,
+    consultationReason: savedCase.consultationReason || "",
     clinicalHistory: savedCase.clinicalHistory,
+    treatmentQuestion: savedCase.treatmentQuestion || "",
     treatmentOptions: reconstructedTreatments,
+    structuredTreatments: savedCase.treatmentOptions && savedCase.treatmentOptions.length > 0 ? savedCase.treatmentOptions : [],
     selectedKeywords: reconstructedKeywords,
     isInteractiveExam: savedCase.isPhysicalExamInteractive,
     examZone: savedCase.physicalExamZone || "",
@@ -39,6 +42,9 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
     painLevel: savedCase.painLevel,
     hasVideo: savedCase.hasVideo,
     videoDescription: savedCase.videoDescription || "",
+    clinicalSummary: savedCase.clinicalSummary || "",
+    epidemiology: savedCase.epidemiology || "",
+    complications: savedCase.complications || "",
     addedStudies: reconstructedStudies,
   };
 }

@@ -35,6 +35,11 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
         <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle">
           <h5 className="text-xs font-bold uppercase text-teal-text mb-1">Título del Caso</h5>
           <div className="val font-semibold text-text-main text-base">{submittedCase.title}</div>
+          {submittedCase.consultationReason && (
+            <div className="text-xs text-text-muted mt-1 italic">
+              Motivo: {submittedCase.consultationReason}
+            </div>
+          )}
         </div>
 
         <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle">
@@ -76,7 +81,7 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
           </h5>
           <div className="val text-sm flex flex-col gap-1.5">
             {submittedCase.studies?.map((s, i) => (
-              <div key={i} className="text-xs text-text-main flex items-center gap-2">
+              <div key={s.id || `${s.studyCatalog?.name || "study"}-${i}`} className="text-xs text-text-main flex items-center gap-2">
                 <strong>{s.studyCatalog?.name}</strong>
                 <AdequacyBadge isAdequate={s.isAdequate} />
               </div>
@@ -91,7 +96,7 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
           <div className="val flex flex-col gap-1.5">
             {submittedCase.treatmentOptions?.map((t, i) => (
               <div
-                key={i}
+                key={t.id || `summary-opt-${t.order || i}-${i}`}
                 className="text-xs flex items-center gap-2"
                 style={{ color: t.isCorrect ? "var(--teal-text)" : "var(--text-main)" }}
               >
@@ -110,7 +115,33 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
             ))}
           </div>
         </div>
+
+        {(submittedCase.clinicalSummary || submittedCase.epidemiology || submittedCase.complications) && (
+          <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle col-span-full">
+            <h5 className="text-xs font-bold uppercase text-teal-text mb-1">
+              Epílogo Docente & Resumen Clínico
+            </h5>
+            {submittedCase.clinicalSummary && (
+              <p className="text-xs text-text-main mb-2 leading-relaxed">
+                {submittedCase.clinicalSummary}
+              </p>
+            )}
+            <div className="flex gap-4 text-xs text-text-muted flex-wrap">
+              {submittedCase.epidemiology && (
+                <div>
+                  <strong className="text-text-main">Epidemiología:</strong> {submittedCase.epidemiology}
+                </div>
+              )}
+              {submittedCase.complications && (
+                <div>
+                  <strong className="text-text-main">Complicaciones:</strong> {submittedCase.complications}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
 
       <div className="text-center mt-8 flex justify-center gap-3.5 flex-wrap">
         <button

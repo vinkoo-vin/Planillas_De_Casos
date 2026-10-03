@@ -48,6 +48,7 @@ export default function Home() {
 
   // Caché en memoria para fichas clínicas completas (acceso instantáneo en 0ms)
   const caseDetailsCache = useRef<Map<string, SavedCase>>(new Map());
+  const notificationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Consulta de casos guardados (asíncrona en segundo plano) con validación HTTP
   const fetchSavedCases = useCallback(async () => {
@@ -149,6 +150,7 @@ export default function Home() {
     return () => {
       isMounted = false;
       clearTimeout(timer);
+      if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
     };
   }, [fetchSavedCases]);
 
@@ -181,8 +183,14 @@ export default function Home() {
   }, []);
 
   const handleNotify = useCallback((msg: string) => {
+    if (notificationTimerRef.current) {
+      clearTimeout(notificationTimerRef.current);
+    }
     setCopiedNotification(msg);
-    setTimeout(() => setCopiedNotification(null), 3000);
+    notificationTimerRef.current = setTimeout(() => {
+      setCopiedNotification(null);
+      notificationTimerRef.current = null;
+    }, 3200);
   }, []);
 
   const handleLoadCaseExample = useCallback((draft: CaseDraft) => {

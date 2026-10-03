@@ -5,6 +5,7 @@ export interface StudyCatalogItem {
 }
 
 export interface AddedStudy {
+  id?: string;
   name: string;
   isAdequate: boolean;
   findings: string;
@@ -13,9 +14,19 @@ export interface AddedStudy {
   definition?: string;
 }
 
+
+export interface TreatmentOptionItem {
+  id?: string;
+  description: string;
+  isCorrect: boolean;
+  feedback?: string | null;
+  order?: number;
+}
+
 export interface SavedCase {
   id: string;
   title: string;
+  consultationReason?: string | null;
   clinicalHistory: string;
   painLevel: string;
   hasVideo: boolean;
@@ -24,6 +35,10 @@ export interface SavedCase {
   physicalExamZone?: string | null;
   physicalExamRefPoint?: string | null;
   physicalExamStandard?: string | null;
+  treatmentQuestion?: string | null;
+  clinicalSummary?: string | null;
+  epidemiology?: string | null;
+  complications?: string | null;
   createdAt: string;
   keywords: { keyword: { name: string } }[];
   studies: {
@@ -34,21 +49,18 @@ export interface SavedCase {
     imageUrl?: string | null;
     imageName?: string | null;
   }[];
-  treatmentOptions: {
-    id?: string;
-    description: string;
-    isCorrect: boolean;
-    feedback?: string | null;
-    order?: number;
-  }[];
+  treatmentOptions: TreatmentOptionItem[];
 }
 
 export interface CaseDraft {
   id?: string;
   isEditing?: boolean;
   title?: string;
+  consultationReason?: string | null;
   clinicalHistory?: string;
+  treatmentQuestion?: string | null;
   treatmentOptions?: string;
+  structuredTreatments?: TreatmentOptionItem[];
   selectedKeywords?: string[];
   isInteractiveExam?: boolean;
   examZone?: string | null;
@@ -57,8 +69,40 @@ export interface CaseDraft {
   painLevel?: string;
   hasVideo?: boolean;
   videoDescription?: string | null;
+  clinicalSummary?: string | null;
+  epidemiology?: string | null;
+  complications?: string | null;
   addedStudies?: AddedStudy[];
 }
+
+export interface CaseFormData {
+  // Fase 1: Presentación & Semiología
+  title: string;
+  consultationReason: string;
+  clinicalHistory: string;
+  hasVideo: boolean;
+  videoDescription: string;
+  isInteractiveExam: boolean;
+  examZone: string;
+  examRefPoint: string;
+  examStandardText: string;
+  painLevel: string;
+
+  // Fase 2: Matriz Diagnóstica
+  studies: AddedStudy[];
+
+  // Fase 3: Resolución Terapéutica
+  treatmentQuestion: string;
+  treatmentOptions: TreatmentOptionItem[];
+
+  // Fase 4: Resumen & Epílogo Docente
+  clinicalSummary: string;
+  epidemiology: string;
+  complications: string;
+  keywords: string[];
+}
+
+export type FormErrorMap = Partial<Record<keyof CaseFormData, string>>;
 
 export type ThemeKey = "teal" | "warm" | "dark" | "emerald" | "neumorphic";
 

@@ -194,6 +194,7 @@ export const caseDetailIncludes = {
 
 export interface CasePayloadData {
   title: string;
+  consultationReason?: string | null;
   clinicalHistory: string;
   hasVideo?: boolean;
   videoDescription?: string | null;
@@ -203,7 +204,12 @@ export interface CasePayloadData {
   physicalExamRefPoint?: string | null;
   physicalExamStandard?: string | null;
   painLevel: string;
+  treatmentQuestion?: string | null;
   treatmentRaw?: string | null;
+  structuredTreatments?: TreatmentOptionParsed[];
+  clinicalSummary?: string | null;
+  epidemiology?: string | null;
+  complications?: string | null;
   keywords?: string[];
   studies?: RawStudyInput[];
 }
@@ -215,6 +221,7 @@ export interface CasePayloadData {
 export async function prepareCasePayload(body: CasePayloadData) {
   const {
     title,
+    consultationReason,
     clinicalHistory,
     hasVideo = false,
     videoDescription,
@@ -224,12 +231,35 @@ export async function prepareCasePayload(body: CasePayloadData) {
     physicalExamRefPoint,
     physicalExamStandard,
     painLevel,
+    treatmentQuestion,
     treatmentRaw,
+    structuredTreatments,
+    clinicalSummary,
+    epidemiology,
+    complications,
     keywords = [],
     studies = [],
   } = body;
 
-  const parsedTreatments = parseTreatmentRaw(treatmentRaw);
+  let parsedTreatments: TreatmentOptionParsed[] = [];
+  let effectiveTreatmentRaw = treatmentRaw?.trim() || null;
+
+  if (structuredTreatments && structuredTreatments.length > 0) {
+    parsedTreatments = structuredTreatments.map((t, idx) => ({
+      description: t.description?.trim() || "",
+      isCorrect: Boolean(t.isCorrect),
+      feedback: t.feedback?.trim() || null,
+      order: idx + 1,
+    })).filter(t => Boolean(t.description));
+
+    if (!effectiveTreatmentRaw) {
+      effectiveTreatmentRaw = parsedTreatments
+        .map((t) => `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}${t.feedback ? ` | Feedback: ${t.feedback}` : ""}`)
+        .join("\n");
+    }
+  } else {
+    parsedTreatments = parseTreatmentRaw(treatmentRaw);
+  }
 
   const [keywordRecords, validStudies] = await Promise.all([
     syncKeywords(keywords),
@@ -238,6 +268,7 @@ export async function prepareCasePayload(body: CasePayloadData) {
 
   const baseData = {
     title: title.trim(),
+    consultationReason: consultationReason?.trim() || null,
     clinicalHistory: clinicalHistory.trim(),
     hasVideo: Boolean(hasVideo),
     videoDescription: videoDescription?.trim() || null,
@@ -247,7 +278,11 @@ export async function prepareCasePayload(body: CasePayloadData) {
     physicalExamRefPoint: physicalExamRefPoint?.trim() || null,
     physicalExamStandard: physicalExamStandard?.trim() || null,
     painLevel: painLevel.trim(),
-    treatmentRaw: treatmentRaw?.trim() || null,
+    treatmentQuestion: treatmentQuestion?.trim() || null,
+    treatmentRaw: effectiveTreatmentRaw,
+    clinicalSummary: clinicalSummary?.trim() || null,
+    epidemiology: epidemiology?.trim() || null,
+    complications: complications?.trim() || null,
   };
 
   const keywordsCreate = keywordRecords.map((kw) => ({

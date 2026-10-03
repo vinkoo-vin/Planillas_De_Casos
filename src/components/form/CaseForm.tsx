@@ -2,12 +2,12 @@
 
 import React from "react";
 import { StudyCatalogItem, SavedCase, CaseDraft } from "@/types/clinical";
-import { KeywordsSection } from "./KeywordsSection";
-import { PhysicalExamSection } from "./PhysicalExamSection";
-import { StudiesSection } from "./StudiesSection";
-import { TreatmentSection } from "./TreatmentSection";
+import { CaseStepper } from "./CaseStepper";
+import { Phase1Presentation } from "./Phase1Presentation";
+import { Phase2DiagnosticMatrix } from "./Phase2DiagnosticMatrix";
+import { Phase3TreatmentResolution } from "./Phase3TreatmentResolution";
+import { Phase4ClinicalSummary } from "./Phase4ClinicalSummary";
 import { CaseSummaryCard } from "./CaseSummaryCard";
-
 import { useCaseForm } from "./useCaseForm";
 
 interface CaseFormProps {
@@ -24,7 +24,13 @@ interface CaseFormProps {
   onNotify: (msg: string) => void;
 }
 
-export function CaseForm({
+const NEXT_PHASE_LABELS: Record<number, string> = {
+  1: "Continuar a Fase 2: Diagnóstico",
+  2: "Continuar a Fase 3: Tratamiento",
+  3: "Continuar a Fase 4: Resumen del Caso",
+};
+
+export const CaseForm = React.memo(function CaseForm({
   initialDraft,
   onClearDraft,
   keywordsPool,
@@ -38,33 +44,18 @@ export function CaseForm({
   onNotify,
 }: CaseFormProps) {
   const {
+    currentPhase,
+    setCurrentPhase,
+    goToNextPhase,
+    goToPrevPhase,
+    phaseValidation,
     editingCaseId,
-    caseTitle,
-    setCaseTitle,
-    selectedKeywords,
+    formData,
+    formErrors,
+    updateField,
     handleToggleKeyword,
     handleAddCustomKeyword,
-    clinicalHistory,
-    setClinicalHistory,
-    hasVideo,
-    setHasVideo,
-    videoDescription,
-    setVideoDescription,
-    isInteractiveExam,
-    setIsInteractiveExam,
-    examZone,
-    setExamZone,
-    examRefPoint,
-    setExamRefPoint,
-    examStandardText,
-    setExamStandardText,
-    selectedPainLevel,
-    setSelectedPainLevel,
     handlePromptNewPainLevel,
-    addedStudies,
-    setAddedStudies,
-    treatmentOptions,
-    setTreatmentOptions,
     isSubmitting,
     submittedCase,
     handleSubmit,
@@ -84,6 +75,7 @@ export function CaseForm({
 
   return (
     <div>
+      {/* NOTIFICACIÓN DE MODO EDICIÓN */}
       {editingCaseId ? (
         <aside
           aria-label="Notificación de edición de caso"
@@ -95,7 +87,7 @@ export function CaseForm({
             </span>
             <div className="text-xs sm:text-sm text-text-body">
               <span className="font-bold text-text-main">Modo Edición Activado:</span>{" "}
-              Modificando caso <strong>{caseTitle ? `"${caseTitle}"` : `#${editingCaseId}`}</strong>. Realice los cambios deseados y presione Guardar Cambios.
+              Modificando caso <strong>{formData.title ? `"${formData.title}"` : `#${editingCaseId}`}</strong>. Puede navegar libremente entre las 4 fases y guardar cambios.
             </div>
           </div>
           <button
@@ -104,7 +96,7 @@ export function CaseForm({
               handleResetForm();
               if (onClearDraft) onClearDraft();
             }}
-            className="text-xs font-bold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
+            className="text-xs font-semibold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
           >
             Cancelar edición y crear nuevo caso
           </button>
@@ -119,8 +111,8 @@ export function CaseForm({
               ✨
             </span>
             <div className="text-xs sm:text-sm text-text-body">
-              <span className="font-bold text-text-main">Caso de ejemplo cargado desde la Guía:</span>{" "}
-              Los campos han sido completados con un caso pediátrico validado. Puedes editarlo o guardarlo.
+              <span className="font-bold text-text-main">Borrador de Ejemplo Cargado:</span>{" "}
+              Visualizando <strong>&ldquo;{formData.title || "Caso Clínico"}&rdquo;</strong>. Puede adaptar los campos o continuar con la publicación.
             </div>
           </div>
           <button
@@ -129,168 +121,96 @@ export function CaseForm({
               handleResetForm();
               if (onClearDraft) onClearDraft();
             }}
-            className="text-xs font-bold text-teal-text hover:underline cursor-pointer"
+            className="text-xs font-semibold text-teal-text hover:underline cursor-pointer"
           >
-            Limpiar y empezar de cero
+            Limpiar y empezar desde cero
           </button>
         </aside>
       ) : null}
 
-      <form onSubmit={handleSubmit}>
-        {/* 1. TÍTULO */}
-        <div className="card form-section p-6 rounded-2xl mb-6 shadow-sm border border-card-border bg-card-bg">
-          <div className="section-header flex items-center gap-3.5 mb-5 pb-3.5 border-b border-border-subtle">
-            <div className="section-num w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">
-              1
-            </div>
-            <h3 className="section-title text-xl font-bold text-text-main">Título del Caso</h3>
+      {/* STEPPER SUPERIOR CON ACCESIBILIDAD ARIA */}
+      <CaseStepper
+        currentPhase={currentPhase}
+        onSelectPhase={setCurrentPhase}
+        phaseValidation={phaseValidation}
+      />
+
+      {/* FORMULARIO PRINCIPAL */}
+      <form onSubmit={handleSubmit} noValidate>
+        {/* FASE 1: MOTIVO DE CONSULTA */}
+        {currentPhase === 1 && (
+          <Phase1Presentation
+            data={formData}
+            updateField={updateField}
+            formErrors={formErrors}
+            painLevelsPool={painLevelsPool}
+            onPromptNewPainLevel={handlePromptNewPainLevel}
+          />
+        )}
+
+        {/* FASE 2: DIAGNÓSTICO */}
+        {currentPhase === 2 && (
+          <Phase2DiagnosticMatrix
+            data={formData}
+            updateField={updateField}
+            onNotify={onNotify}
+          />
+        )}
+
+        {/* FASE 3: TRATAMIENTO */}
+        {currentPhase === 3 && (
+          <Phase3TreatmentResolution
+            data={formData}
+            updateField={updateField}
+            formErrors={formErrors}
+            onNotify={onNotify}
+          />
+        )}
+
+        {/* FASE 4: RESUMEN DEL CASO */}
+        {currentPhase === 4 && (
+          <Phase4ClinicalSummary
+            data={formData}
+            updateField={updateField}
+            keywordsPool={keywordsPool}
+            onToggleKeyword={handleToggleKeyword}
+            onAddCustomKeyword={handleAddCustomKeyword}
+            onSelectPhase={setCurrentPhase}
+            isSubmitting={isSubmitting}
+            isEditing={Boolean(editingCaseId)}
+          />
+        )}
+
+        {/* CONTROLES DE NAVEGACIÓN INFERIOR DEL STEPPER */}
+        <div className="flex items-center justify-between gap-4 mt-8 pt-5 border-t border-border-subtle flex-wrap">
+          <div>
+            {currentPhase > 1 && (
+              <button
+                type="button"
+                onClick={goToPrevPhase}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-surface hover:bg-surface-subtle border border-border-subtle text-text-main transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
+              >
+                <span>&larr; Fase Anterior</span>
+              </button>
+            )}
           </div>
-          <div className="form-group">
-            <label htmlFor="caseTitle" className="block text-sm font-semibold text-text-main mb-1.5">
-              Título que verá el alumno (sin spoilers del diagnóstico)
-            </label>
-            <input
-              type="text"
-              id="caseTitle"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
-              value={caseTitle}
-              onChange={(e) => setCaseTitle(e.target.value)}
-              placeholder="Ej: Lactante de 4 semanas con vómitos recurrentes e irritabilidad"
-            />
-            <span className="helper-text text-xs text-text-muted mt-1 block">
-              Debe orientar el motivo de consulta sin adelantar la resolución patológica.
-            </span>
+
+          <div className="flex items-center gap-3">
+            {currentPhase < 4 && (
+              <button
+                type="button"
+                onClick={goToNextPhase}
+                className="btn btn-teal inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
+              >
+                <span>{NEXT_PHASE_LABELS[currentPhase] || "Continuar"}</span>
+                <span>&rarr;</span>
+              </button>
+            )}
           </div>
         </div>
-
-        {/* 2. PALABRAS CLAVE */}
-        <KeywordsSection
-          keywordsPool={keywordsPool}
-          selectedKeywords={selectedKeywords}
-          onToggleKeyword={handleToggleKeyword}
-          onAddCustomKeyword={handleAddCustomKeyword}
-        />
-
-        {/* 3. HISTORIA CLÍNICA */}
-        <div className="card form-section p-6 rounded-2xl mb-6 shadow-sm border border-card-border bg-card-bg">
-          <div className="section-header flex items-center gap-3.5 mb-5 pb-3.5 border-b border-border-subtle">
-            <div className="section-num w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-sm shrink-0 shadow-sm">
-              3
-            </div>
-            <h3 className="section-title text-xl font-bold text-text-main">Historia Clínica y Anamnesis</h3>
-          </div>
-          <div className="form-group mb-5">
-            <label htmlFor="clinicalHistory" className="block text-sm font-semibold text-text-main mb-1.5">
-              Descripción del Paciente y Motivo de Consulta:
-            </label>
-            <textarea
-              id="clinicalHistory"
-              rows={4}
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
-              value={clinicalHistory}
-              onChange={(e) => setClinicalHistory(e.target.value)}
-              placeholder="Describa edad, antecedentes perinatales, evolución de los síntomas y estado general..."
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="block text-sm font-semibold text-text-main mb-2">
-              ¿El caso incluye recurso audiovisual complementario?
-            </label>
-            <div className="toggle-group flex gap-3 flex-wrap sm:flex-nowrap">
-              <label
-                className={`toggle-label flex-1 flex items-center justify-center gap-2 p-3.5 rounded-xl cursor-pointer font-semibold text-sm border transition-all ${
-                  hasVideo ? "active shadow-sm" : "border-input-border text-text-body"
-                }`}
-                onClick={() => setHasVideo(true)}
-              >
-                <input
-                  type="radio"
-                  name="videoToggle"
-                  checked={hasVideo}
-                  onChange={() => setHasVideo(true)}
-                  className="hidden"
-                />
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <polygon points="23 7 16 12 23 17 23 7" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
-                Sí, incluye Video
-              </label>
-
-              <label
-                className={`toggle-label flex-1 flex items-center justify-center gap-2 p-3.5 rounded-xl cursor-pointer font-semibold text-sm border transition-all ${
-                  !hasVideo ? "active shadow-sm" : "border-input-border text-text-body"
-                }`}
-                onClick={() => setHasVideo(false)}
-              >
-                <input
-                  type="radio"
-                  name="videoToggle"
-                  checked={!hasVideo}
-                  onChange={() => setHasVideo(false)}
-                  className="hidden"
-                />
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                No requiere Video
-              </label>
-            </div>
-          </div>
-
-          {hasVideo && (
-            <div className="form-group mt-4">
-              <label htmlFor="videoDesc" className="block text-sm font-semibold text-text-main mb-1.5">
-                Descripción / Detalle del Video Clínico:
-              </label>
-              <textarea
-                id="videoDesc"
-                rows={2}
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm"
-                value={videoDescription}
-                onChange={(e) => setVideoDescription(e.target.value)}
-                placeholder="Ej: Video demostrativo del peristaltismo gástrico visible previo al episodio de emesis..."
-              />
-            </div>
-          )}
-        </div>
-
-        {/* 4. EXAMEN FÍSICO */}
-        <PhysicalExamSection
-          isInteractiveExam={isInteractiveExam}
-          setIsInteractiveExam={setIsInteractiveExam}
-          examZone={examZone}
-          setExamZone={setExamZone}
-          examRefPoint={examRefPoint}
-          setExamRefPoint={setExamRefPoint}
-          examStandardText={examStandardText}
-          setExamStandardText={setExamStandardText}
-          selectedPainLevel={selectedPainLevel}
-          setSelectedPainLevel={setSelectedPainLevel}
-          painLevelsPool={painLevelsPool}
-          onPromptNewPainLevel={handlePromptNewPainLevel}
-        />
-
-        {/* 5. ESTUDIOS COMPLEMENTARIOS */}
-        <StudiesSection
-          studiesCatalog={studiesCatalog}
-          addedStudies={addedStudies}
-          setAddedStudies={setAddedStudies}
-          onNotify={onNotify}
-        />
-
-        {/* 6. TRATAMIENTO Y GUARDADO */}
-        <TreatmentSection
-          treatmentOptions={treatmentOptions}
-          setTreatmentOptions={setTreatmentOptions}
-          isSubmitting={isSubmitting}
-          isEditing={Boolean(editingCaseId)}
-        />
       </form>
 
-      {/* 7. TARJETA RESUMEN DE CONFIRMACIÓN */}
+      {/* TARJETA RESUMEN TRAS GUARDAR */}
       {submittedCase && (
         <CaseSummaryCard
           submittedCase={submittedCase}
@@ -300,4 +220,4 @@ export function CaseForm({
       )}
     </div>
   );
-}
+});

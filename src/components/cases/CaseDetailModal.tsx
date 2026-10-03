@@ -24,7 +24,7 @@ export function CaseDetailModal({
 }: CaseDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
 
-  // Manejo accesible de la tecla Escape para cerrar el modal
+  // Manejo de la tecla Escape para cerrar el modal
   useEffect(() => {
     if (!caseData) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -93,6 +93,12 @@ export function CaseDetailModal({
               <h3 id="modal-case-title" className="modal-case-title text-xl font-extrabold text-text-main leading-snug">
                 {caseData.title}
               </h3>
+              {caseData.consultationReason && (
+                <div className="text-xs text-text-muted mt-1.5 flex items-center gap-1.5">
+                  <span className="font-bold text-text-main">Motivo de Consulta:</span>
+                  <span>{caseData.consultationReason}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -108,68 +114,63 @@ export function CaseDetailModal({
             </div>
           </div>
 
-          {/* CUERPO DE LA FICHA */}
+          {/* CUERPO DE LA FICHA EN LAS 4 FASES CLÍNICAS */}
           <div className="modal-content-body p-6 flex flex-col gap-6">
-            {/* 1. HISTORIA CLÍNICA */}
-            <div className="modal-clinical-block flex flex-col gap-2">
-              <div className="modal-block-header text-xs font-bold uppercase tracking-wider text-teal-text flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-                1. Historia Clínica y Anamnesis
+            {/* FASE 1: PRESENTACIÓN Y SEMIOLOGÍA */}
+            <div className="modal-clinical-block p-4 rounded-2xl border border-border-subtle bg-surface-subtle flex flex-col gap-3">
+              <div className="modal-block-header text-xs font-extrabold uppercase tracking-wider text-teal flex items-center gap-2">
+                <span>🩺</span>
+                <span>Fase 1: Motivo de Consulta</span>
               </div>
-              <p className="modal-history-text text-sm leading-relaxed text-text-main whitespace-pre-wrap">
-                {caseData.clinicalHistory}
-              </p>
+
+              <div>
+                <span className="text-xs font-bold text-text-muted block mb-1">
+                  Historia de la Enfermedad Actual y Signos Clave:
+                </span>
+                <p className="modal-history-text text-sm leading-relaxed text-text-main whitespace-pre-wrap bg-card-bg p-3 rounded-xl border border-border-subtle">
+                  {caseData.clinicalHistory}
+                </p>
+              </div>
+
               {caseData.hasVideo && (
-                <div className="mt-2 p-3 rounded-lg bg-teal-light text-text-main text-xs flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <div className="p-3 rounded-xl bg-teal-light text-text-main text-xs flex items-center gap-2 border border-teal-border">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-teal shrink-0">
                     <polygon points="23 7 16 12 23 17 23 7" />
                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                   </svg>
-                  <span>
-                    <strong>Recurso Audiovisual:</strong>{" "}
-                    {caseData.videoDescription || "Video clínico configurado"}
-                  </span>
+                  <div>
+                    <strong className="text-text-main">Recurso Audiovisual para el Simulador:</strong>{" "}
+                    <span>{caseData.videoDescription || "Video clínico configurado"}</span>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* 2. EXAMEN FÍSICO */}
-            <div className="modal-clinical-block flex flex-col gap-2">
-              <div className="modal-block-header text-xs font-bold uppercase tracking-wider text-teal-text flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m4.93 4.93 4.24 4.24" />
-                  <path d="m14.83 9.17 4.24-4.24" />
-                  <path d="m14.83 14.83 4.24 4.24" />
-                  <path d="m9.17 14.83-4.24 4.24" />
-                </svg>
-                2. Examen Físico y Hallazgos
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* EXAMEN FÍSICO */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border-subtle/60">
                 <div>
-                  <span className="text-xs text-text-muted block">Modalidad:</span>
-                  <strong className="text-text-main text-sm">
-                    {caseData.isPhysicalExamInteractive ? "Interactivo" : "Estándar"}
+                  <span className="text-xs text-text-muted block">Modalidad de Exploración:</span>
+                  <strong className="text-text-main text-xs sm:text-sm">
+                    {caseData.isPhysicalExamInteractive ? "Interactivo (Puntos Anatómicos 3D)" : "Estándar (Narrativo)"}
                   </strong>
                 </div>
+
                 {caseData.physicalExamZone && (
                   <div>
                     <span className="text-xs text-text-muted block">Zona Anatómica:</span>
-                    <strong className="text-text-main text-sm">{caseData.physicalExamZone}</strong>
+                    <strong className="text-text-main text-xs sm:text-sm">{caseData.physicalExamZone}</strong>
                   </div>
                 )}
+
                 {caseData.physicalExamRefPoint && (
                   <div>
-                    <span className="text-xs text-text-muted block">Punto de Referencia:</span>
-                    <strong className="text-text-main text-sm">{caseData.physicalExamRefPoint}</strong>
+                    <span className="text-xs text-text-muted block">Punto / Signo Palpatorio:</span>
+                    <strong className="text-text-main text-xs sm:text-sm">{caseData.physicalExamRefPoint}</strong>
                   </div>
                 )}
+
                 <div className="col-span-full">
-                  <span className="text-xs text-text-muted block mb-1">Hallazgo / Nivel de Dolor:</span>
-                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-sm inline-flex items-center gap-2">
+                  <span className="text-xs text-text-muted block mb-1">Nivel de Dolor / Respuesta al Estímulo:</span>
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs sm:text-sm inline-flex items-center gap-2">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                       <line x1="12" y1="9" x2="12" y2="13" />
@@ -181,126 +182,194 @@ export function CaseDetailModal({
               </div>
             </div>
 
-            {/* 3. ESTUDIOS COMPLEMENTARIOS */}
-            <div className="modal-clinical-block flex flex-col gap-2">
-              <div className="modal-block-header text-xs font-bold uppercase tracking-wider text-teal-text flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M21 21H3V3" />
-                  <path d="m21 9-8 8-4-4-6 6" />
-                </svg>
-                3. Estudios Complementarios ({caseData.studies?.length || 0})
-              </div>
-              {caseData.studies?.map((s, i) => (
-                <div key={i} className="study-item-card p-3.5 rounded-xl border border-border-subtle bg-surface-subtle">
-                  <div className="study-header-line flex items-center justify-between gap-3 mb-1.5">
-                    <strong className="text-text-main text-sm font-bold">
-                      {s.studyCatalog?.name}
-                    </strong>
-                    <AdequacyBadge isAdequate={s.isAdequate} />
-                  </div>
-                  <div className="text-xs text-text-body mb-2">
-                    <strong>Hallazgo:</strong> {s.findings || "Sin hallazgos especificados"}
-                  </div>
-                  {s.imageUrl && (
-                    <div className="mt-2.5">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-semibold text-text-muted flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                          Imagen adjunta: {s.imageName || "Captura del estudio"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setLightboxImage({ url: s.imageUrl!, title: s.imageName || s.studyCatalog?.name || "Estudio" })}
-                          className="text-[11px] font-bold text-teal-text hover:underline inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <ZoomInIcon width={12} height={12} />
-                          Ver en Grande
-                        </button>
-                      </div>
-                      <div
-                        onClick={() => setLightboxImage({ url: s.imageUrl!, title: s.imageName || s.studyCatalog?.name || "Estudio" })}
-                        className="relative group cursor-pointer overflow-hidden rounded-xl border border-border-subtle bg-black/60 max-w-sm"
-                        title="Haga clic para ampliar la imagen en alta definición"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={s.imageUrl}
-                          alt={s.imageName || s.studyCatalog?.name || "Estudio"}
-                          loading="lazy"
-                          decoding="async"
-                          className="max-h-48 w-full object-contain transition-transform duration-200 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-[2px]">
-                          <ZoomInIcon width={16} height={16} />
-                          Clic para ampliar
-                        </div>
-                      </div>
-                    </div>
-                  )}
+            {/* FASE 2: DIAGNÓSTICO */}
+            <div className="modal-clinical-block p-4 rounded-2xl border border-border-subtle bg-surface-subtle flex flex-col gap-3">
+              <div className="modal-block-header text-xs font-extrabold uppercase tracking-wider text-teal flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span>🔬</span>
+                  <span>Fase 2: Diagnóstico ({caseData.studies?.length || 0} Estudios)</span>
                 </div>
-              ))}
-            </div>
-
-            {/* 4. CONDUCTA TERAPÉUTICA */}
-            <div className="modal-clinical-block flex flex-col gap-2">
-              <div className="modal-block-header text-xs font-bold uppercase tracking-wider text-teal-text flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
-                  <path d="m8.5 8.5 7 7" />
-                </svg>
-                4. Opciones Terapéuticas ({caseData.treatmentOptions?.length || 0})
               </div>
-              {caseData.treatmentOptions?.map((t, i) => (
-                <div
-                  key={i}
-                  className={`treatment-pill-item flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
-                    t.isCorrect
-                      ? "correct border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-500/40 shadow-xs"
-                      : "border-border-subtle bg-surface-subtle"
-                  }`}
-                >
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${
-                      t.isCorrect
-                        ? "bg-emerald-600 text-white"
-                        : "bg-surface-hover border border-border-subtle text-text-main"
-                    }`}
-                  >
-                    {t.isCorrect ? (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <div className="flex-1 text-sm">
-                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="font-bold text-text-main text-sm sm:text-base leading-snug">
-                        {t.description}
-                      </span>
-                      {t.isCorrect && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          Correcta
-                        </span>
+
+              {(!caseData.studies || caseData.studies.length === 0) ? (
+                <div className="text-xs text-text-muted italic p-3 bg-card-bg rounded-xl border border-border-subtle">
+                  No se registraron estudios complementarios para este caso.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {caseData.studies.map((s, i) => (
+                    <div key={s.id || `${s.studyCatalog?.name || "study"}-${i}`} className="study-item-card p-3.5 rounded-xl border border-border-subtle bg-card-bg">
+                      <div className="study-header-line flex items-center justify-between gap-3 mb-1.5 flex-wrap">
+                        <strong className="text-text-main text-sm font-bold">
+                          {s.studyCatalog?.name}
+                        </strong>
+                        <AdequacyBadge isAdequate={s.isAdequate} />
+                      </div>
+                      <div className="text-xs text-text-body mb-2 leading-relaxed">
+                        <span className="font-bold text-text-main">Informe para el alumno: </span>
+                        <span>{s.findings || "Sin hallazgos especificados"}</span>
+                      </div>
+                      {s.imageUrl && (
+                        <div className="mt-2.5">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[11px] font-semibold text-text-muted flex items-center gap-1">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                              Imagen adjunta: {s.imageName || "Captura del estudio"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setLightboxImage({ url: s.imageUrl!, title: s.imageName || s.studyCatalog?.name || "Estudio" })}
+                              className="text-[11px] font-bold text-teal-text hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <ZoomInIcon width={12} height={12} />
+                              Ver en Grande
+                            </button>
+                          </div>
+                          <div
+                            onClick={() => setLightboxImage({ url: s.imageUrl!, title: s.imageName || s.studyCatalog?.name || "Estudio" })}
+                            className="relative group cursor-pointer overflow-hidden rounded-xl border border-border-subtle bg-black/60 max-w-sm"
+                            title="Haga clic para ampliar la imagen en alta definición"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={s.imageUrl}
+                              alt={s.imageName || s.studyCatalog?.name || "Estudio"}
+                              loading="lazy"
+                              decoding="async"
+                              className="max-h-48 w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-[2px]">
+                              <ZoomInIcon width={16} height={16} />
+                              Clic para ampliar
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    {t.feedback && (
-                      <div className="mt-2 text-xs text-text-body bg-card-bg/80 p-2.5 rounded-lg border border-border-subtle leading-relaxed">
-                        <span className="font-bold text-text-main">Feedback pedagógico: </span>
-                        <span>{t.feedback}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* FASE 3: TRATAMIENTO */}
+            <div className="modal-clinical-block p-4 rounded-2xl border border-border-subtle bg-surface-subtle flex flex-col gap-3">
+              <div className="modal-block-header text-xs font-extrabold uppercase tracking-wider text-teal flex items-center gap-2">
+                <span>💊</span>
+                <span>Fase 3: Tratamiento ({caseData.treatmentOptions?.length || 0} Conductas)</span>
+              </div>
+
+              {caseData.treatmentQuestion && (
+                <div className="p-3 rounded-xl bg-card-bg border border-border-subtle text-xs sm:text-sm font-bold text-text-main">
+                  <span className="text-teal font-extrabold mr-1.5">Pregunta:</span>
+                  {caseData.treatmentQuestion}
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                {caseData.treatmentOptions?.map((t, i) => (
+                  <div
+                    key={t.id || `treatment-${t.order || i}-${i}`}
+                    className={`treatment-pill-item flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                      t.isCorrect
+                        ? "correct border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-950/30 dark:border-emerald-500/40 shadow-xs"
+                        : "border-border-subtle bg-card-bg"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 shadow-xs ${
+                        t.isCorrect
+                          ? "bg-emerald-600 text-white"
+                          : "bg-surface border border-border-subtle text-text-muted"
+                      }`}
+                    >
+                      {t.isCorrect ? "✓" : i + 1}
+                    </div>
+                    <div className="flex-1 text-sm">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="font-bold text-text-main text-xs sm:text-sm leading-snug">
+                          {t.description}
+                        </span>
+                        {t.isCorrect && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                            Respuesta Correcta
+                          </span>
+                        )}
                       </div>
-                    )}
+                      {t.feedback && (
+                        <div className="mt-1.5 text-xs text-text-body bg-surface-subtle p-2 rounded-lg border border-border-subtle leading-relaxed">
+                          <span className="font-bold text-text-main">Feedback pedagógico: </span>
+                          <span>{t.feedback}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FASE 4: RESUMEN DEL CASO */}
+            <div className="modal-clinical-block p-4 rounded-2xl border border-border-subtle bg-surface-subtle flex flex-col gap-3">
+              <div className="modal-block-header text-xs font-extrabold uppercase tracking-wider text-teal flex items-center gap-2">
+                <span>📋</span>
+                <span>Fase 4: Resumen del Caso</span>
+              </div>
+
+              {caseData.clinicalSummary && (
+                <div>
+                  <span className="text-xs font-bold text-text-muted block mb-1">
+                    Resumen Clínico y Discusión Docente:
+                  </span>
+                  <p className="text-xs sm:text-sm text-text-main leading-relaxed bg-card-bg p-3 rounded-xl border border-border-subtle whitespace-pre-wrap">
+                    {caseData.clinicalSummary}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {caseData.epidemiology && (
+                  <div>
+                    <span className="text-xs font-bold text-text-muted block mb-1">
+                      Epidemiología y Factores de Riesgo:
+                    </span>
+                    <p className="text-xs text-text-main leading-relaxed bg-card-bg p-3 rounded-xl border border-border-subtle">
+                      {caseData.epidemiology}
+                    </p>
+                  </div>
+                )}
+
+                {caseData.complications && (
+                  <div>
+                    <span className="text-xs font-bold text-text-muted block mb-1">
+                      Complicaciones Principales:
+                    </span>
+                    <p className="text-xs text-text-main leading-relaxed bg-card-bg p-3 rounded-xl border border-border-subtle">
+                      {caseData.complications}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {caseData.keywords && caseData.keywords.length > 0 && (
+                <div className="pt-2 border-t border-border-subtle/60">
+                  <span className="text-xs font-bold text-text-muted block mb-1.5">
+                    Palabras Clave Indexadas:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {caseData.keywords.map((kw, i) => (
+                      <span
+                        key={kw.keyword?.name || i}
+                        className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-teal text-white shadow-xs"
+                      >
+                        {kw.keyword.name}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -327,7 +396,7 @@ export function CaseDetailModal({
         </div>
       </div>
 
-      {/* LIGHTBOX MODAL PARA VER IMAGEN EN ALTA RESOLUCIÓN */}
+      {/* LIGHTBOX MODAL */}
       <ImageLightboxModal
         isOpen={Boolean(lightboxImage)}
         imageUrl={lightboxImage?.url || ""}

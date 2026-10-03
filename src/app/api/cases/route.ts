@@ -65,10 +65,15 @@ export async function GET(req: NextRequest) {
           select: {
             id: true,
             title: true,
+            consultationReason: true,
             clinicalHistory: true,
             hasVideo: true,
             isPhysicalExamInteractive: true,
             painLevel: true,
+            treatmentQuestion: true,
+            clinicalSummary: true,
+            epidemiology: true,
+            complications: true,
             status: true,
             createdAt: true,
             keywords: {

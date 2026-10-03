@@ -15,7 +15,7 @@ interface CasesTableProps {
   onPrefetch?: (id: string) => void;
 }
 
-export function CasesTable({
+export const CasesTable = React.memo(function CasesTable({
   cases,
   isLoading,
   onRefresh,
@@ -33,11 +33,24 @@ export function CasesTable({
     const term = deferredSearch.toLowerCase();
     return cases.filter((c) => {
       const matchTitle = c.title.toLowerCase().includes(term);
+      const matchReason = c.consultationReason?.toLowerCase().includes(term);
       const matchHistory = c.clinicalHistory?.toLowerCase().includes(term);
-      const matchKw = c.keywords.some((k) => k.keyword.name.toLowerCase().includes(term));
-      return matchTitle || matchHistory || matchKw;
+      const matchSummary = c.clinicalSummary?.toLowerCase().includes(term);
+      const matchEpidemiology = c.epidemiology?.toLowerCase().includes(term);
+      const matchComplications = c.complications?.toLowerCase().includes(term);
+      const matchKw = c.keywords?.some((k) => k.keyword?.name?.toLowerCase().includes(term));
+      return (
+        matchTitle ||
+        Boolean(matchReason) ||
+        Boolean(matchHistory) ||
+        Boolean(matchSummary) ||
+        Boolean(matchEpidemiology) ||
+        Boolean(matchComplications) ||
+        Boolean(matchKw)
+      );
     });
   }, [cases, deferredSearch]);
+
 
   return (
     <div>
@@ -57,11 +70,13 @@ export function CasesTable({
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
+            id="search-cases"
             type="text"
             className="search-input-field w-full pl-10 pr-10 py-2.5 rounded-xl text-sm"
             placeholder="Buscar por síntoma, diagnóstico o palabra clave..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Buscar casos clínicos por síntoma, diagnóstico o palabra clave"
           />
           {searchTerm && (
             <button
@@ -69,6 +84,7 @@ export function CasesTable({
               className="clear-search-btn absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full hover:opacity-80"
               onClick={() => setSearchTerm("")}
               title="Limpiar búsqueda"
+              aria-label="Limpiar búsqueda de casos"
             >
               <CloseIcon width={14} height={14} />
             </button>
@@ -162,6 +178,11 @@ export function CasesTable({
                       <span className="case-title-text font-bold text-base text-text-main leading-snug">
                         {c.title}
                       </span>
+                      {c.consultationReason && (
+                        <span className="text-xs font-semibold text-teal-text line-clamp-1">
+                          Motivo: {c.consultationReason}
+                        </span>
+                      )}
                       <span className="text-xs text-text-muted line-clamp-1">
                         {c.clinicalHistory?.slice(0, 110)}...
                       </span>
@@ -175,7 +196,7 @@ export function CasesTable({
                     <div className="flex flex-wrap gap-1 max-w-[220px]">
                       {c.keywords?.slice(0, 3).map((kw, i) => (
                         <span
-                          key={i}
+                          key={kw.keyword?.name || i}
                           className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-surface-subtle border border-border-subtle text-text-main"
                         >
                           {kw.keyword.name}
@@ -188,6 +209,7 @@ export function CasesTable({
                       )}
                     </div>
                   </td>
+
 
                   <td className="py-4 px-5">
                     <div className="flex flex-col gap-1">
@@ -253,4 +275,5 @@ export function CasesTable({
       )}
     </div>
   );
-}
+});
+

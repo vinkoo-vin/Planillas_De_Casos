@@ -20,6 +20,7 @@ enum CaseStatus {
 model Case {
   id                         String              @id @default(cuid())
   title                      String              @map("title")
+  consultationReason         String?             @map("consultation_reason") @db.Text
   clinicalHistory            String              @map("clinical_history") @db.Text
   hasVideo                   Boolean             @default(false) @map("has_video")
   videoDescription           String?             @map("video_description") @db.Text
@@ -29,7 +30,11 @@ model Case {
   physicalExamRefPoint       String?             @map("physical_exam_ref_point")
   physicalExamStandard       String?             @map("physical_exam_standard") @db.Text
   painLevel                  String              @map("pain_level")
+  treatmentQuestion          String?             @map("treatment_question") @db.Text
   treatmentRaw               String?             @map("treatment_raw") @db.Text
+  clinicalSummary            String?             @map("clinical_summary") @db.Text
+  epidemiology               String?             @map("epidemiology") @db.Text
+  complications              String?             @map("complications") @db.Text
   status                     CaseStatus          @default(PUBLISHED) @map("status")
   createdAt                  DateTime            @default(now()) @map("created_at")
   updatedAt                  DateTime            @updatedAt @map("updated_at")

@@ -1,5 +1,15 @@
-import { useState, useCallback, useEffect, FormEvent } from "react";
-import { StudyCatalogItem, AddedStudy, SavedCase, CaseDraft } from "@/types/clinical";
+"use client";
+
+import { useState, useCallback, useMemo, FormEvent } from "react";
+import {
+  StudyCatalogItem,
+  SavedCase,
+  CaseDraft,
+  CaseFormData,
+  FormErrorMap,
+} from "@/types/clinical";
+import { FormPhase, PhaseValidationState } from "./CaseStepper";
+import { DEFAULT_TREATMENT_OPTIONS } from "./Phase3TreatmentResolution";
 
 interface UseCaseFormProps {
   initialDraft?: CaseDraft | null;
@@ -14,6 +24,81 @@ interface UseCaseFormProps {
   onNotify: (msg: string) => void;
 }
 
+export function createInitialFormData(defaultPainLevel = ""): CaseFormData {
+  return {
+    title: "",
+    consultationReason: "",
+    clinicalHistory: "",
+    hasVideo: false,
+    videoDescription: "",
+    isInteractiveExam: true,
+    examZone: "",
+    examRefPoint: "",
+    examStandardText: "",
+    painLevel: defaultPainLevel,
+    studies: [],
+    treatmentQuestion: "",
+    treatmentOptions: DEFAULT_TREATMENT_OPTIONS,
+    clinicalSummary: "",
+    epidemiology: "",
+    complications: "",
+    keywords: ["Vómito en proyectil", "Lactante"],
+  };
+}
+
+export function buildFormDataFromDraft(
+  draft: CaseDraft | null | undefined,
+  defaultPainLevel = ""
+): CaseFormData {
+  if (!draft) {
+    return createInitialFormData(defaultPainLevel);
+  }
+
+  // Reconstruir opciones terapéuticas estructuradas si vinieran en formato legacy
+  let effectiveTreatments = draft.structuredTreatments;
+  if ((!effectiveTreatments || effectiveTreatments.length === 0) && draft.treatmentOptions) {
+    const lines = draft.treatmentOptions
+      .split("\n")
+      .filter((l) => l.trim().length > 0);
+    if (lines.length > 0) {
+      effectiveTreatments = lines.map((l, i) => ({
+        id: `legacy-opt-${i + 1}`,
+        description: l
+          .replace(/\[CORRECTA\]/gi, "")
+          .replace(/\|.*$/, "")
+          .replace(/^[-*•\d.]\s*/, "")
+          .trim(),
+        isCorrect: /\[CORRECTA\]/i.test(l),
+        feedback: l.includes("|") ? l.split("|")[1].replace(/feedback:/i, "").trim() : "",
+        order: i + 1,
+      }));
+    }
+  }
+
+  return {
+    title: draft.title ?? "",
+    consultationReason: draft.consultationReason ?? "",
+    clinicalHistory: draft.clinicalHistory ?? "",
+    hasVideo: draft.hasVideo ?? false,
+    videoDescription: draft.videoDescription ?? "",
+    isInteractiveExam: draft.isInteractiveExam ?? true,
+    examZone: draft.examZone ?? "",
+    examRefPoint: draft.examRefPoint ?? "",
+    examStandardText: draft.examStandardText ?? "",
+    painLevel: draft.painLevel ?? defaultPainLevel,
+    studies: draft.addedStudies ?? [],
+    treatmentQuestion: draft.treatmentQuestion ?? "",
+    treatmentOptions:
+      effectiveTreatments && effectiveTreatments.length > 0
+        ? effectiveTreatments
+        : DEFAULT_TREATMENT_OPTIONS,
+    clinicalSummary: draft.clinicalSummary ?? "",
+    epidemiology: draft.epidemiology ?? "",
+    complications: draft.complications ?? "",
+    keywords: draft.selectedKeywords ?? ["Vómito en proyectil", "Lactante"],
+  };
+}
+
 export function useCaseForm({
   initialDraft,
   onClearDraft,
@@ -25,69 +110,68 @@ export function useCaseForm({
   onCaseUpdated,
   onNotify,
 }: UseCaseFormProps) {
-  const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
-  const [caseTitle, setCaseTitle] = useState("");
-  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
-    new Set(["Vómito en proyectil", "Lactante"])
+  const [currentPhase, setCurrentPhase] = useState<FormPhase>(1);
+  const [prevDraft, setPrevDraft] = useState<CaseDraft | null | undefined>(initialDraft);
+  const [editingCaseId, setEditingCaseId] = useState<string | null>(initialDraft?.id || null);
+
+  // ESTADO UNIFICADO DEL FORMULARIO (Evita 18+ useStates dispersos y reduce re-renderizados)
+  const [formData, setFormData] = useState<CaseFormData>(() =>
+    buildFormDataFromDraft(initialDraft, painLevelsPool[0] || "")
   );
-  const [clinicalHistory, setClinicalHistory] = useState("");
-  const [hasVideo, setHasVideo] = useState(false);
-  const [videoDescription, setVideoDescription] = useState("");
 
-  const [isInteractiveExam, setIsInteractiveExam] = useState(true);
-  const [examZone, setExamZone] = useState("");
-  const [examRefPoint, setExamRefPoint] = useState("");
-  const [examStandardText, setExamStandardText] = useState("");
-  const [selectedPainLevel, setSelectedPainLevel] = useState(painLevelsPool[0] || "");
+  // Mapa granular de errores de validación por campo
+  const [formErrors, setFormErrors] = useState<FormErrorMap>({});
 
-  const [addedStudies, setAddedStudies] = useState<AddedStudy[]>([]);
-  const [treatmentOptions, setTreatmentOptions] = useState("");
+  // Sincronizar borrador inicial durante el render (patrón oficial de React para ajustar estado desde props sin useEffect)
+  if (initialDraft !== prevDraft) {
+    setPrevDraft(initialDraft);
+    setEditingCaseId(initialDraft?.id || null);
+    setFormData(buildFormDataFromDraft(initialDraft, painLevelsPool[0] || ""));
+    setFormErrors({});
+  }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCase, setSubmittedCase] = useState<SavedCase | null>(null);
 
-  // Sincronizar borrador inicial cuando se carga desde la Guía o desde el modo Edición
-  useEffect(() => {
-    if (initialDraft) {
-      queueMicrotask(() => {
-        setEditingCaseId(initialDraft.id || null);
-        if (initialDraft.title !== undefined) setCaseTitle(initialDraft.title);
-        if (initialDraft.clinicalHistory !== undefined) setClinicalHistory(initialDraft.clinicalHistory);
-        if (initialDraft.treatmentOptions !== undefined) setTreatmentOptions(initialDraft.treatmentOptions);
-        if (initialDraft.selectedKeywords !== undefined) setSelectedKeywords(new Set(initialDraft.selectedKeywords));
-        if (initialDraft.isInteractiveExam !== undefined) setIsInteractiveExam(initialDraft.isInteractiveExam);
-        if (initialDraft.examZone !== undefined) setExamZone(initialDraft.examZone || "");
-        if (initialDraft.examRefPoint !== undefined) setExamRefPoint(initialDraft.examRefPoint || "");
-        if (initialDraft.examStandardText !== undefined) setExamStandardText(initialDraft.examStandardText || "");
-        if (initialDraft.painLevel !== undefined) setSelectedPainLevel(initialDraft.painLevel || "");
-        if (initialDraft.hasVideo !== undefined) setHasVideo(initialDraft.hasVideo ?? false);
-        if (initialDraft.videoDescription !== undefined) setVideoDescription(initialDraft.videoDescription || "");
-        if (initialDraft.addedStudies !== undefined) setAddedStudies(initialDraft.addedStudies || []);
+  // Actualizador genérico tipado y funcional de campos (rerender-functional-setstate)
+  const updateField = useCallback(
+    <K extends keyof CaseFormData>(field: K, value: CaseFormData[K] | ((prev: CaseFormData[K]) => CaseFormData[K])) => {
+      setFormData((prev) => {
+        const nextVal = typeof value === "function" ? (value as (p: CaseFormData[K]) => CaseFormData[K])(prev[field]) : value;
+        return { ...prev, [field]: nextVal };
       });
-    } else {
-      queueMicrotask(() => {
-        setEditingCaseId(null);
+      // Limpiar error asociado a ese campo si existiera
+      setFormErrors((prev) => {
+        if (!prev[field]) return prev;
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
       });
-    }
-  }, [initialDraft]);
+    },
+    []
+  );
 
-  const handleToggleKeyword = useCallback((kw: string) => {
-    setSelectedKeywords((prev) => {
-      const next = new Set(prev);
-      if (next.has(kw)) next.delete(kw);
-      else next.add(kw);
-      return next;
-    });
-  }, []);
+  // Manejo de palabras clave
+  const handleToggleKeyword = useCallback(
+    (kw: string) => {
+      updateField("keywords", (prev) =>
+        prev.includes(kw) ? prev.filter((k) => k !== kw) : [...prev, kw]
+      );
+    },
+    [updateField]
+  );
 
   const handleAddCustomKeyword = useCallback(
     async (val: string) => {
-      if (!keywordsPool.includes(val)) {
+      const trimmed = val.trim();
+      if (!trimmed) return;
+
+      if (!keywordsPool.includes(trimmed)) {
         try {
           const res = await fetch("/api/keywords", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: val }),
+            body: JSON.stringify({ name: trimmed }),
           });
           const json = await res.json();
           if (json.success) {
@@ -97,11 +181,15 @@ export function useCaseForm({
           console.error("Error al registrar palabra clave:", err);
         }
       }
-      setSelectedKeywords((prev) => new Set(prev).add(val));
+
+      updateField("keywords", (prev) =>
+        prev.includes(trimmed) ? prev : [...prev, trimmed]
+      );
     },
-    [keywordsPool, setKeywordsPool]
+    [keywordsPool, setKeywordsPool, updateField]
   );
 
+  // Manejo de nuevo nivel de dolor
   const handlePromptNewPainLevel = useCallback(async () => {
     const newPain = prompt("Ingrese el nuevo nivel de dolor o hallazgo para añadir al catálogo:");
     if (!newPain || !newPain.trim()) return;
@@ -115,47 +203,154 @@ export function useCaseForm({
       const json = await res.json();
       if (json.success) {
         setPainLevelsPool((prev) => [...prev, json.data.description]);
-        setSelectedPainLevel(json.data.description);
+        updateField("painLevel", json.data.description);
       }
     } catch (err) {
       console.error("Error al añadir nuevo nivel de dolor:", err);
     }
-  }, [setPainLevelsPool]);
+  }, [setPainLevelsPool, updateField]);
 
+  // Reiniciar formulario
   const handleResetForm = useCallback(() => {
     setEditingCaseId(null);
+    setPrevDraft(null);
     setSubmittedCase(null);
-    setCaseTitle("");
-    setClinicalHistory("");
-    setTreatmentOptions("");
-    setAddedStudies([]);
-    setSelectedKeywords(new Set(["Vómito en proyectil", "Lactante"]));
+    setCurrentPhase(1);
+    setFormData(createInitialFormData(painLevelsPool[0] || ""));
+    setFormErrors({});
     if (onClearDraft) onClearDraft();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [onClearDraft]);
+  }, [onClearDraft, painLevelsPool]);
 
+  // Navegación entre Fases
+  const goToNextPhase = useCallback(() => {
+    setCurrentPhase((prev) => {
+      const next = (prev < 4 ? prev + 1 : prev) as FormPhase;
+      window.scrollTo({ top: 120, behavior: "smooth" });
+      return next;
+    });
+  }, []);
+
+  const goToPrevPhase = useCallback(() => {
+    setCurrentPhase((prev) => {
+      const next = (prev > 1 ? prev - 1 : prev) as FormPhase;
+      window.scrollTo({ top: 120, behavior: "smooth" });
+      return next;
+    });
+  }, []);
+
+  const selectPhase = useCallback((phase: FormPhase) => {
+    setCurrentPhase(phase);
+    window.scrollTo({ top: 120, behavior: "smooth" });
+  }, []);
+
+  // Estado de validación reactivo por fase (rerender-derived-state-no-effect)
+  const phaseValidation = useMemo<Record<FormPhase, PhaseValidationState>>(() => {
+    const p1Complete = Boolean(
+      formData.title.trim() &&
+        formData.consultationReason.trim() &&
+        formData.clinicalHistory.trim() &&
+        formData.painLevel.trim()
+    );
+    const p2Complete = formData.studies.length > 0 && formData.studies.every((s) => Boolean(s.name.trim()));
+    const p3Complete =
+      formData.treatmentOptions.length > 0 &&
+      formData.treatmentOptions.some((t) => t.isCorrect && t.description.trim());
+    const p4Complete = formData.keywords.length > 0;
+
+    const p1HasErrors = Boolean(formErrors.title || formErrors.consultationReason || formErrors.clinicalHistory || formErrors.painLevel);
+    const p3HasErrors = Boolean(formErrors.treatmentOptions);
+
+    return {
+      1: { isComplete: p1Complete, hasErrors: p1HasErrors },
+      2: { isComplete: p2Complete },
+      3: { isComplete: p3Complete, hasErrors: p3HasErrors },
+      4: { isComplete: p4Complete },
+    };
+  }, [formData, formErrors]);
+
+  // Validación exhaustiva previa al envío
+  const validateForm = useCallback((): { isValid: boolean; targetPhase: FormPhase; errors: FormErrorMap } => {
+    const errors: FormErrorMap = {};
+    let targetPhase: FormPhase = 1;
+
+    // Fase 1
+    if (!formData.title.trim()) {
+      errors.title = "El nombre o título del caso es obligatorio";
+      targetPhase = 1;
+    }
+    if (!formData.consultationReason.trim()) {
+      errors.consultationReason = "El motivo de consulta del paciente es obligatorio";
+      targetPhase = 1;
+    }
+    if (!formData.clinicalHistory.trim()) {
+      errors.clinicalHistory = "La historia clínica y anamnesis es obligatoria";
+      targetPhase = 1;
+    }
+    if (!formData.painLevel.trim()) {
+      errors.painLevel = "Debe seleccionar la respuesta del examen físico o nivel de dolor";
+      targetPhase = 1;
+    }
+
+    // Si la Fase 1 pasó, validar Fase 3
+    if (Object.keys(errors).length === 0) {
+      const hasCorrect = formData.treatmentOptions.some((t) => t.isCorrect && t.description.trim());
+      if (!hasCorrect) {
+        errors.treatmentOptions = "Debe registrar al menos una conducta terapéutica válida como correcta";
+        targetPhase = 3;
+      }
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      targetPhase,
+      errors,
+    };
+  }, [formData]);
+
+  // Envío del formulario
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!caseTitle.trim()) return alert("Por favor complete el título del caso clínico.");
-    if (!clinicalHistory.trim()) return alert("Por favor escriba la historia clínica.");
-    if (!selectedPainLevel.trim()) return alert("Por favor seleccione un nivel de dolor.");
-    if (!treatmentOptions.trim()) return alert("Por favor defina las opciones de conducta terapéutica.");
+    const { isValid, targetPhase, errors } = validateForm();
+    if (!isValid) {
+      setFormErrors(errors);
+      setCurrentPhase(targetPhase);
+      const firstErrorMessage = Object.values(errors)[0] || "Por favor complete los campos obligatorios.";
+      onNotify(firstErrorMessage);
+      return;
+    }
+
+    // Construir texto plano legacy de tratamientos para retrocompatibilidad
+    const treatmentRawLegacy = formData.treatmentOptions
+      .map(
+        (t) =>
+          `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}${
+            t.feedback ? ` | Feedback: ${t.feedback}` : ""
+          }`
+      )
+      .join("\n");
 
     const payload = {
       ...(editingCaseId ? { id: editingCaseId } : {}),
-      title: caseTitle,
-      clinicalHistory,
-      hasVideo,
-      videoDescription: hasVideo ? videoDescription : null,
-      isPhysicalExamInteractive: isInteractiveExam,
-      physicalExamZone: isInteractiveExam ? examZone : null,
-      physicalExamRefPoint: isInteractiveExam ? examRefPoint : null,
-      physicalExamStandard: !isInteractiveExam ? examStandardText : null,
-      painLevel: selectedPainLevel,
-      treatmentRaw: treatmentOptions,
-      keywords: Array.from(selectedKeywords),
-      studies: addedStudies,
+      title: formData.title.trim(),
+      consultationReason: formData.consultationReason.trim(),
+      clinicalHistory: formData.clinicalHistory.trim(),
+      hasVideo: formData.hasVideo,
+      videoDescription: formData.hasVideo ? formData.videoDescription.trim() || null : null,
+      isPhysicalExamInteractive: formData.isInteractiveExam,
+      physicalExamZone: formData.isInteractiveExam ? formData.examZone.trim() || null : null,
+      physicalExamRefPoint: formData.isInteractiveExam ? formData.examRefPoint.trim() || null : null,
+      physicalExamStandard: !formData.isInteractiveExam ? formData.examStandardText.trim() || null : null,
+      painLevel: formData.painLevel.trim(),
+      treatmentQuestion: formData.treatmentQuestion?.trim() || null,
+      treatmentRaw: treatmentRawLegacy,
+      structuredTreatments: formData.treatmentOptions,
+      clinicalSummary: formData.clinicalSummary.trim() || null,
+      epidemiology: formData.epidemiology.trim() || null,
+      complications: formData.complications.trim() || null,
+      keywords: formData.keywords,
+      studies: formData.studies,
     };
 
     try {
@@ -174,50 +369,38 @@ export function useCaseForm({
           onNotify("Caso clínico actualizado exitosamente");
         } else {
           onCaseCreated(json.data);
-          onNotify("Caso clínico registrado exitosamente");
+          onNotify("Caso clínico registrado y publicado exitosamente");
         }
         setTimeout(() => {
           document.getElementById("summaryCard")?.scrollIntoView({ behavior: "smooth" });
         }, 150);
       } else {
-        alert("Error al guardar: " + (json.error || "No se pudo guardar el caso clínico"));
+        onNotify("Error al guardar: " + (json.error || "No se pudo guardar el caso clínico"));
       }
     } catch (err) {
       console.error("Error al enviar caso:", err);
-      alert("Ocurrió un error al intentar registrar el caso clínico.");
+      onNotify("Ocurrió un error al intentar registrar el caso clínico.");
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
   return {
+    currentPhase,
+    setCurrentPhase: selectPhase,
+    goToNextPhase,
+    goToPrevPhase,
+    phaseValidation,
     editingCaseId,
-    caseTitle,
-    setCaseTitle,
-    selectedKeywords,
+    formData,
+    formErrors,
+    updateField,
     handleToggleKeyword,
     handleAddCustomKeyword,
-    clinicalHistory,
-    setClinicalHistory,
-    hasVideo,
-    setHasVideo,
-    videoDescription,
-    setVideoDescription,
-    isInteractiveExam,
-    setIsInteractiveExam,
-    examZone,
-    setExamZone,
-    examRefPoint,
-    setExamRefPoint,
-    examStandardText,
-    setExamStandardText,
-    selectedPainLevel,
-    setSelectedPainLevel,
     handlePromptNewPainLevel,
-    addedStudies,
-    setAddedStudies,
-    treatmentOptions,
-    setTreatmentOptions,
+    keywordsPool,
+    painLevelsPool,
     isSubmitting,
     submittedCase,
     handleSubmit,
