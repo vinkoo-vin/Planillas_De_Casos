@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useId } from "react";
+import React, { useState, useRef, useEffect, useId, useMemo } from "react";
 import { CheckIcon } from "./Icons";
 
 export interface CustomSelectOption {
@@ -57,11 +57,16 @@ export function CustomSelect({
   const selectedOption = options.find((opt) => opt.value === value);
   const isActionSelected = actionOption && actionOption.value === value;
 
-  // Filtrado de opciones por búsqueda
-  const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (opt.subtitle && opt.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Filtrado de opciones por búsqueda memoizado (Vercel Best Practice)
+  const filteredOptions = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return options;
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        (opt.subtitle && opt.subtitle.toLowerCase().includes(q))
+    );
+  }, [options, searchQuery]);
 
   // Cerrar al hacer clic fuera
   useEffect(() => {
@@ -284,7 +289,7 @@ export function CustomSelect({
                 <span>No se encontraron estudios coincidentes</span>
               </div>
             ) : (
-              filteredOptions.map((opt, idx) => {
+              filteredOptions.map((opt: CustomSelectOption, idx: number) => {
                 const isSelected = opt.value === value;
                 const isHighlighted = idx === highlightedIndex;
 
