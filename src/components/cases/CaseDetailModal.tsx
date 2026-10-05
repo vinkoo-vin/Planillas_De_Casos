@@ -77,6 +77,48 @@ export function CaseDetailModal({
     );
   };
 
+  const renderCustomFieldsForPhase = (phase: number | "summary") => {
+    if (!caseData?.customFields || !Array.isArray(caseData.customFields)) return null;
+    const fields = caseData.customFields.filter((f) => String(f.phase) === String(phase));
+    if (fields.length === 0) return null;
+
+    return (
+      <div className="mt-3 pt-3 border-t border-border-subtle/60">
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal block mb-2">
+          Campos Adicionales del Doctor ({fields.length}):
+        </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {fields.map((f, idx) => (
+            <div key={f.id || idx} className="p-2.5 rounded-xl bg-card-bg border border-border-subtle text-xs space-y-1.5">
+              <strong className="text-text-main font-semibold block">{f.label}</strong>
+              {f.value && <p className="text-text-body whitespace-pre-wrap">{f.value}</p>}
+              {f.imageUrl && (
+                <div className="pt-1.5 border-t border-border-subtle/50">
+                  <div
+                    onClick={() => setLightboxImage({ url: f.imageUrl!, title: f.label || "Imagen médica" })}
+                    className="relative group cursor-pointer overflow-hidden rounded-lg border border-border-subtle bg-black/40 max-w-xs"
+                    title="Clic para ampliar imagen"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={f.imageUrl}
+                      alt={f.label}
+                      className="max-h-36 w-full object-contain group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                      <ZoomInIcon width={12} height={12} />
+                      Clic para ampliar
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (!caseData) return null;
 
   return (
@@ -200,6 +242,8 @@ export function CaseDetailModal({
                   </div>
                 </div>
               </div>
+
+              {renderCustomFieldsForPhase(1)}
             </div>
 
             {/* FASE 2: DIAGNÓSTICO */}
@@ -273,6 +317,8 @@ export function CaseDetailModal({
                   ))}
                 </div>
               )}
+
+              {renderCustomFieldsForPhase(2)}
             </div>
 
             {/* FASE 3: TRATAMIENTO */}
@@ -329,6 +375,8 @@ export function CaseDetailModal({
                   </div>
                 ))}
               </div>
+
+              {renderCustomFieldsForPhase(3)}
             </div>
 
             {/* FASE 4: RESUMEN DEL CASO */}
@@ -390,6 +438,9 @@ export function CaseDetailModal({
                   </div>
                 </div>
               )}
+
+              {renderCustomFieldsForPhase(4)}
+              {renderCustomFieldsForPhase("summary")}
             </div>
           </div>
 

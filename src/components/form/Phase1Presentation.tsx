@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { CaseFormData, FormErrorMap } from "@/types/clinical";
+import { CaseFormData, FormErrorMap, CustomFieldItem } from "@/types/clinical";
 import { CustomSelect } from "@/components/common/CustomSelect";
+import { CustomFieldsSection } from "./subcomponents/CustomFieldsSection";
 
 interface Phase1PresentationProps {
   data: CaseFormData;
@@ -13,6 +14,9 @@ interface Phase1PresentationProps {
   formErrors: FormErrorMap;
   painLevelsPool: string[];
   onPromptNewPainLevel: () => void;
+  onAddCustomField: (phase: number | "summary") => void;
+  onUpdateCustomField: (id: string, updates: Partial<CustomFieldItem>) => void;
+  onRemoveCustomField: (id: string) => void;
 }
 
 export const Phase1Presentation = React.memo(function Phase1Presentation({
@@ -21,6 +25,9 @@ export const Phase1Presentation = React.memo(function Phase1Presentation({
   formErrors,
   painLevelsPool,
   onPromptNewPainLevel,
+  onAddCustomField,
+  onUpdateCustomField,
+  onRemoveCustomField,
 }: Phase1PresentationProps) {
   return (
     <div
@@ -344,6 +351,18 @@ export const Phase1Presentation = React.memo(function Phase1Presentation({
           )}
         </div>
       </div>
+
+      {/* BLOQUE D: CAMPOS ADICIONALES DEL DOCTOR (FASE 1) */}
+      <CustomFieldsSection
+        phase={1}
+        customFields={data.customFields}
+        onAddField={onAddCustomField}
+        onUpdateField={onUpdateCustomField}
+        onRemoveField={onRemoveCustomField}
+        title="Campos Adicionales de Semiología y Motivo de Consulta"
+        description="Agregue parámetros o campos personalizados que el médico requiera para complementar la anamnesis o el examen físico (ej: Presión arterial, Saturación O2, Escala Glasgow, etc.)."
+        badgeLabel="Fase 1"
+      />
     </div>
   );
 });

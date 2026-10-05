@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { CaseFormData, FormErrorMap, TreatmentOptionItem } from "@/types/clinical";
+import { CaseFormData, FormErrorMap, TreatmentOptionItem, CustomFieldItem } from "@/types/clinical";
 import { TreatmentOptionCard } from "./subcomponents/TreatmentOptionCard";
+import { CustomFieldsSection } from "./subcomponents/CustomFieldsSection";
 
 interface Phase3TreatmentResolutionProps {
   data: CaseFormData;
@@ -12,6 +13,9 @@ interface Phase3TreatmentResolutionProps {
   ) => void;
   formErrors: FormErrorMap;
   onNotify?: (msg: string) => void;
+  onAddCustomField: (phase: number | "summary") => void;
+  onUpdateCustomField: (id: string, updates: Partial<CustomFieldItem>) => void;
+  onRemoveCustomField: (id: string) => void;
 }
 
 export interface TreatmentPreset {
@@ -102,6 +106,9 @@ export const Phase3TreatmentResolution = React.memo(function Phase3TreatmentReso
   updateField,
   formErrors,
   onNotify,
+  onAddCustomField,
+  onUpdateCustomField,
+  onRemoveCustomField,
 }: Phase3TreatmentResolutionProps) {
   // Incorporar un preset frecuente
   const handleAddTreatmentPreset = useCallback(
@@ -307,6 +314,18 @@ export const Phase3TreatmentResolution = React.memo(function Phase3TreatmentReso
           </div>
         )}
       </div>
+
+      {/* BLOQUE B: CAMPOS ADICIONALES DEL DOCTOR (FASE 3) */}
+      <CustomFieldsSection
+        phase={3}
+        customFields={data.customFields}
+        onAddField={onAddCustomField}
+        onUpdateField={onUpdateCustomField}
+        onRemoveField={onRemoveCustomField}
+        title="Campos Adicionales de Tratamiento y Resolución"
+        description="Agregue pautas terapéuticas particulares, contraindicaciones específicas, ajustes posológicos o protocolos de guardia adicionales."
+        badgeLabel="Fase 3"
+      />
     </div>
   );
 });

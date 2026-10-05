@@ -56,6 +56,9 @@ export const CaseForm = React.memo(function CaseForm({
     handleToggleKeyword,
     handleAddCustomKeyword,
     handlePromptNewPainLevel,
+    handleAddCustomField,
+    handleUpdateCustomField,
+    handleRemoveCustomField,
     isSubmitting,
     submittedCase,
     handleSubmit,
@@ -145,6 +148,9 @@ export const CaseForm = React.memo(function CaseForm({
             formErrors={formErrors}
             painLevelsPool={painLevelsPool}
             onPromptNewPainLevel={handlePromptNewPainLevel}
+            onAddCustomField={handleAddCustomField}
+            onUpdateCustomField={handleUpdateCustomField}
+            onRemoveCustomField={handleRemoveCustomField}
           />
         )}
 
@@ -154,6 +160,9 @@ export const CaseForm = React.memo(function CaseForm({
             data={formData}
             updateField={updateField}
             onNotify={onNotify}
+            onAddCustomField={handleAddCustomField}
+            onUpdateCustomField={handleUpdateCustomField}
+            onRemoveCustomField={handleRemoveCustomField}
           />
         )}
 
@@ -164,6 +173,9 @@ export const CaseForm = React.memo(function CaseForm({
             updateField={updateField}
             formErrors={formErrors}
             onNotify={onNotify}
+            onAddCustomField={handleAddCustomField}
+            onUpdateCustomField={handleUpdateCustomField}
+            onRemoveCustomField={handleRemoveCustomField}
           />
         )}
 
@@ -178,6 +190,9 @@ export const CaseForm = React.memo(function CaseForm({
             onSelectPhase={setCurrentPhase}
             isSubmitting={isSubmitting}
             isEditing={Boolean(editingCaseId)}
+            onAddCustomField={handleAddCustomField}
+            onUpdateCustomField={handleUpdateCustomField}
+            onRemoveCustomField={handleRemoveCustomField}
           />
         )}
 

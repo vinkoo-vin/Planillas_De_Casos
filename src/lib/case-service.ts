@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import type { AddedStudy } from "@/types/clinical";
+import type { AddedStudy, CustomFieldItem } from "@/types/clinical";
 
 export interface TreatmentOptionParsed {
   description: string;
@@ -210,6 +210,7 @@ export interface CasePayloadData {
   clinicalSummary?: string | null;
   epidemiology?: string | null;
   complications?: string | null;
+  customFields?: CustomFieldItem[];
   keywords?: string[];
   studies?: RawStudyInput[];
 }
@@ -237,6 +238,7 @@ export async function prepareCasePayload(body: CasePayloadData) {
     clinicalSummary,
     epidemiology,
     complications,
+    customFields = [],
     keywords = [],
     studies = [],
   } = body;
@@ -266,6 +268,29 @@ export async function prepareCasePayload(body: CasePayloadData) {
     syncStudies(studies),
   ]);
 
+  const seenCustomFieldKeys = new Set<string>();
+  const sanitizedCustomFields = Array.isArray(customFields)
+    ? customFields
+        .filter((f) => f && (Boolean(f.label?.trim()) || Boolean(f.value?.trim()) || Boolean(f.imageUrl)))
+        .map((f, idx) => {
+          const trimmedLabel = f.label?.trim() || "Campo Adicional";
+          const phaseKey = `${f.phase ?? 1}-${trimmedLabel.toLowerCase()}`;
+          if (seenCustomFieldKeys.has(phaseKey)) return null;
+          seenCustomFieldKeys.add(phaseKey);
+
+          return {
+            id: f.id || `cf-${Date.now()}-${idx}`,
+            phase: f.phase ?? 1,
+            label: trimmedLabel,
+            type: f.type === "image" ? ("image" as const) : ("text" as const),
+            value: f.value?.trim() || "",
+            imageUrl: f.imageUrl || null,
+            imageName: f.imageName || null,
+          };
+        })
+        .filter((f): f is NonNullable<typeof f> => f !== null)
+    : [];
+
   const baseData = {
     title: title.trim(),
     consultationReason: consultationReason?.trim() || null,
@@ -283,6 +308,7 @@ export async function prepareCasePayload(body: CasePayloadData) {
     clinicalSummary: clinicalSummary?.trim() || null,
     epidemiology: epidemiology?.trim() || null,
     complications: complications?.trim() || null,
+    customFields: sanitizedCustomFields,
   };
 
   const keywordsCreate = keywordRecords.map((kw) => ({

@@ -7,6 +7,7 @@ import {
   CaseDraft,
   CaseFormData,
   FormErrorMap,
+  CustomFieldItem,
 } from "@/types/clinical";
 import { FormPhase, PhaseValidationState } from "./CaseStepper";
 import { DEFAULT_TREATMENT_OPTIONS } from "./Phase3TreatmentResolution";
@@ -43,6 +44,7 @@ export function createInitialFormData(defaultPainLevel = ""): CaseFormData {
     epidemiology: "",
     complications: "",
     keywords: ["Vómito en proyectil", "Lactante"],
+    customFields: [],
   };
 }
 
@@ -96,6 +98,7 @@ export function buildFormDataFromDraft(
     epidemiology: draft.epidemiology ?? "",
     complications: draft.complications ?? "",
     keywords: draft.selectedKeywords ?? ["Vómito en proyectil", "Lactante"],
+    customFields: draft.customFields ?? [],
   };
 }
 
@@ -209,6 +212,39 @@ export function useCaseForm({
       console.error("Error al añadir nuevo nivel de dolor:", err);
     }
   }, [setPainLevelsPool, updateField]);
+
+  // Manejo de campos adicionales dinámicos del doctor
+  const handleAddCustomField = useCallback(
+    (phase: number | "summary") => {
+      const newField: CustomFieldItem = {
+        id:
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `cf-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        phase,
+        label: "",
+        value: "",
+      };
+      updateField("customFields", (prev) => [...prev, newField]);
+    },
+    [updateField]
+  );
+
+  const handleUpdateCustomField = useCallback(
+    (id: string, updates: Partial<CustomFieldItem>) => {
+      updateField("customFields", (prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+      );
+    },
+    [updateField]
+  );
+
+  const handleRemoveCustomField = useCallback(
+    (id: string) => {
+      updateField("customFields", (prev) => prev.filter((item) => item.id !== id));
+    },
+    [updateField]
+  );
 
   // Reiniciar formulario
   const handleResetForm = useCallback(() => {
@@ -351,6 +387,7 @@ export function useCaseForm({
       complications: formData.complications.trim() || null,
       keywords: formData.keywords,
       studies: formData.studies,
+      customFields: formData.customFields,
     };
 
     try {
@@ -399,6 +436,9 @@ export function useCaseForm({
     handleToggleKeyword,
     handleAddCustomKeyword,
     handlePromptNewPainLevel,
+    handleAddCustomField,
+    handleUpdateCustomField,
+    handleRemoveCustomField,
     keywordsPool,
     painLevelsPool,
     isSubmitting,

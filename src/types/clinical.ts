@@ -23,6 +23,18 @@ export interface TreatmentOptionItem {
   order?: number;
 }
 
+export type CustomFieldType = "text" | "image";
+
+export interface CustomFieldItem {
+  id: string;
+  phase: number | "summary";
+  label: string;
+  type?: CustomFieldType;
+  value: string;
+  imageUrl?: string | null;
+  imageName?: string | null;
+}
+
 export interface SavedCase {
   id: string;
   title: string;
@@ -39,6 +51,7 @@ export interface SavedCase {
   clinicalSummary?: string | null;
   epidemiology?: string | null;
   complications?: string | null;
+  customFields?: CustomFieldItem[] | null;
   createdAt: string;
   keywords: { keyword: { name: string } }[];
   studies: {
@@ -73,6 +86,7 @@ export interface CaseDraft {
   epidemiology?: string | null;
   complications?: string | null;
   addedStudies?: AddedStudy[];
+  customFields?: CustomFieldItem[];
 }
 
 export interface CaseFormData {
@@ -100,6 +114,9 @@ export interface CaseFormData {
   epidemiology: string;
   complications: string;
   keywords: string[];
+
+  // Campos Adicionales Dinámicos por Fase y Resumen
+  customFields: CustomFieldItem[];
 }
 
 export type FormErrorMap = Partial<Record<keyof CaseFormData, string>>;

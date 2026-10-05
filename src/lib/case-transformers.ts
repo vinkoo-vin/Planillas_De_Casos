@@ -1,4 +1,4 @@
-import { SavedCase, CaseDraft, AddedStudy } from "@/types/clinical";
+import { SavedCase, CaseDraft, AddedStudy, CustomFieldItem } from "@/types/clinical";
 
 /**
  * Transforma un caso clínico guardado en la base de datos (SavedCase)
@@ -6,6 +6,7 @@ import { SavedCase, CaseDraft, AddedStudy } from "@/types/clinical";
  * - Opciones terapéuticas con sus etiquetas [CORRECTA].
  * - Lista de estudios complementarios con imágenes WebP y hallazgos.
  * - Palabras clave seleccionadas.
+ * - Campos adicionales personalizados del doctor.
  */
 export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
   const reconstructedTreatments =
@@ -24,6 +25,10 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
   }));
 
   const reconstructedKeywords = (savedCase.keywords || []).map((kw) => kw.keyword.name);
+
+  const reconstructedCustomFields: CustomFieldItem[] = Array.isArray(savedCase.customFields)
+    ? (savedCase.customFields as unknown as CustomFieldItem[])
+    : [];
 
   return {
     id: savedCase.id,
@@ -46,6 +51,7 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
     epidemiology: savedCase.epidemiology || "",
     complications: savedCase.complications || "",
     addedStudies: reconstructedStudies,
+    customFields: reconstructedCustomFields,
   };
 }
 

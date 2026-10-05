@@ -140,6 +140,38 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
             </div>
           </div>
         )}
+
+        {submittedCase.customFields && submittedCase.customFields.length > 0 && (
+          <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle col-span-full">
+            <h5 className="text-xs font-bold uppercase text-teal-text mb-2">
+              Campos Adicionales del Doctor ({submittedCase.customFields.length})
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {submittedCase.customFields.map((cf, idx) => (
+                <div key={cf.id || idx} className="p-2.5 rounded-lg bg-card-bg border border-border-subtle text-xs">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <strong className="text-text-main font-semibold">{cf.label}</strong>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal/15 text-teal">
+                      {cf.phase === "summary" ? "Resumen" : `Fase ${cf.phase}`}
+                    </span>
+                  </div>
+                  <p className="text-text-body whitespace-pre-wrap">{cf.value}</p>
+                  {cf.imageUrl && (
+                    <div className="mt-2 flex items-center gap-2 pt-1.5 border-t border-border-subtle/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={cf.imageUrl}
+                        alt={cf.label}
+                        className="w-12 h-12 rounded-lg object-cover border border-border-subtle shrink-0"
+                      />
+                      <span className="text-[11px] text-text-muted truncate">{cf.imageName || "Imagen adicional adjunta"}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
 

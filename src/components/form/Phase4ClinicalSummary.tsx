@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { CaseFormData } from "@/types/clinical";
+import { CaseFormData, CustomFieldItem } from "@/types/clinical";
 import { FormPhase } from "./CaseStepper";
 import { KeywordTagPicker } from "./subcomponents/KeywordTagPicker";
+import { CustomFieldsSection } from "./subcomponents/CustomFieldsSection";
 
 interface Phase4ClinicalSummaryProps {
   data: CaseFormData;
@@ -17,6 +18,9 @@ interface Phase4ClinicalSummaryProps {
   onSelectPhase: (phase: FormPhase) => void;
   isSubmitting: boolean;
   isEditing?: boolean;
+  onAddCustomField: (phase: number | "summary") => void;
+  onUpdateCustomField: (id: string, updates: Partial<CustomFieldItem>) => void;
+  onRemoveCustomField: (id: string) => void;
 }
 
 export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
@@ -28,6 +32,9 @@ export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
   onSelectPhase,
   isSubmitting,
   isEditing = false,
+  onAddCustomField,
+  onUpdateCustomField,
+  onRemoveCustomField,
 }: Phase4ClinicalSummaryProps) {
   // Estados para colapsar/expandir bloques de revisión si el usuario desea enfocarse
   const [expandedSections, setExpandedSections] = useState<{
@@ -241,6 +248,18 @@ export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
                 )}
               </div>
             </div>
+
+            {/* CAMPOS ADICIONALES DE FASE 1 EN EL RESUMEN */}
+            <CustomFieldsSection
+              phase={1}
+              customFields={data.customFields}
+              onAddField={onAddCustomField}
+              onUpdateField={onUpdateCustomField}
+              onRemoveField={onRemoveCustomField}
+              title="Campos Adicionales de Semiología (Fase 1)"
+              badgeLabel="Fase 1"
+              isCompact={true}
+            />
           </div>
         )}
       </div>
@@ -378,6 +397,18 @@ export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
                 ))}
               </div>
             )}
+
+            {/* CAMPOS ADICIONALES DE FASE 2 EN EL RESUMEN */}
+            <CustomFieldsSection
+              phase={2}
+              customFields={data.customFields}
+              onAddField={onAddCustomField}
+              onUpdateField={onUpdateCustomField}
+              onRemoveField={onRemoveCustomField}
+              title="Campos Adicionales de Diagnóstico (Fase 2)"
+              badgeLabel="Fase 2"
+              isCompact={true}
+            />
           </div>
         )}
       </div>
@@ -513,6 +544,18 @@ export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
                 ))}
               </div>
             )}
+
+            {/* CAMPOS ADICIONALES DE FASE 3 EN EL RESUMEN */}
+            <CustomFieldsSection
+              phase={3}
+              customFields={data.customFields}
+              onAddField={onAddCustomField}
+              onUpdateField={onUpdateCustomField}
+              onRemoveField={onRemoveCustomField}
+              title="Campos Adicionales de Tratamiento (Fase 3)"
+              badgeLabel="Fase 3"
+              isCompact={true}
+            />
           </div>
         )}
       </div>
@@ -604,9 +647,36 @@ export const Phase4ClinicalSummary = React.memo(function Phase4ClinicalSummary({
                 onAddCustomKeyword={onAddCustomKeyword}
               />
             </div>
+
+            {/* CAMPOS ADICIONALES DE FASE 4 EN EL RESUMEN */}
+            <CustomFieldsSection
+              phase={4}
+              customFields={data.customFields}
+              onAddField={onAddCustomField}
+              onUpdateField={onUpdateCustomField}
+              onRemoveField={onRemoveCustomField}
+              title="Campos Adicionales de Cierre Docente (Fase 4)"
+              description="Parámetros de cierre docente, bibliografía o notas pedagógicas adicionales."
+              badgeLabel="Fase 4"
+              isCompact={true}
+            />
           </div>
         )}
       </div>
+
+      {/* ========================================================= */}
+      {/* BLOQUE 5: CAMPOS ADICIONALES GLOBALES DEL RESUMEN         */}
+      {/* ========================================================= */}
+      <CustomFieldsSection
+        phase="summary"
+        customFields={data.customFields}
+        onAddField={onAddCustomField}
+        onUpdateField={onUpdateCustomField}
+        onRemoveField={onRemoveCustomField}
+        title="Campos Adicionales Globales del Resumen"
+        description="Permite al doctor añadir campos, recordatorios de guardia o conclusiones pedagógicas globales directamente en el resumen."
+        badgeLabel="Resumen"
+      />
 
       {/* ========================================================= */}
       {/* BOTÓN ÚNICO ATÓMICO DE FINALIZAR CASO                     */}

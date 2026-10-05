@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
             clinicalSummary: true,
             epidemiology: true,
             complications: true,
+            customFields: true,
             status: true,
             createdAt: true,
             keywords: {

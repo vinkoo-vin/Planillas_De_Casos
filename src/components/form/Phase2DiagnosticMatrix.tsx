@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { AddedStudy, CaseFormData } from "@/types/clinical";
+import { AddedStudy, CaseFormData, CustomFieldItem } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
 import { compressImageToWebP } from "@/lib/image-compression";
 import { StudyCardItem } from "./subcomponents/StudyCardItem";
+import { CustomFieldsSection } from "./subcomponents/CustomFieldsSection";
 
 interface Phase2DiagnosticMatrixProps {
   data: CaseFormData;
@@ -13,6 +14,9 @@ interface Phase2DiagnosticMatrixProps {
     value: CaseFormData[K] | ((prev: CaseFormData[K]) => CaseFormData[K])
   ) => void;
   onNotify?: (msg: string) => void;
+  onAddCustomField: (phase: number | "summary") => void;
+  onUpdateCustomField: (id: string, updates: Partial<CustomFieldItem>) => void;
+  onRemoveCustomField: (id: string) => void;
 }
 
 const FREQUENT_STUDIES = [
@@ -28,6 +32,9 @@ export const Phase2DiagnosticMatrix = React.memo(function Phase2DiagnosticMatrix
   data,
   updateField,
   onNotify,
+  onAddCustomField,
+  onUpdateCustomField,
+  onRemoveCustomField,
 }: Phase2DiagnosticMatrixProps) {
   const [lightboxImage, setLightboxImage] = useState<{
     url: string;
@@ -260,6 +267,18 @@ export const Phase2DiagnosticMatrix = React.memo(function Phase2DiagnosticMatrix
           </div>
         )}
       </div>
+
+      {/* BLOQUE C: CAMPOS ADICIONALES DEL DOCTOR (FASE 2) */}
+      <CustomFieldsSection
+        phase={2}
+        customFields={data.customFields}
+        onAddField={onAddCustomField}
+        onUpdateField={onUpdateCustomField}
+        onRemoveField={onRemoveCustomField}
+        title="Campos Adicionales de la Matriz Diagnóstica"
+        description="Agregue parámetros diagnósticos específicos, biomarcadores atípicos o consideraciones analíticas adicionales para esta fase."
+        badgeLabel="Fase 2"
+      />
 
       {/* LIGHTBOX MODAL */}
       <ImageLightboxModal
