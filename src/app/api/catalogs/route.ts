@@ -5,19 +5,21 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Consulta optimizada con proyección select estricta para reducir consumo de I/O y memoria
     const [keywords, studies, painLevels] = await Promise.all([
-      prisma.keyword.findMany({
+      prisma.catalogItem.findMany({
+        where: { catalog: "motivo_consulta", active: true },
         select: { name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.studyCatalog.findMany({
-        select: { id: true, name: true, generalDefinition: true },
+      prisma.catalogItem.findMany({
+        where: { catalog: "tipo_estudio", active: true },
+        select: { id: true, name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.painLevelCatalog.findMany({
-        select: { description: true },
-        orderBy: { createdAt: "asc" },
+      prisma.catalogItem.findMany({
+        where: { catalog: "nivel_respuesta", active: true },
+        select: { name: true },
+        orderBy: { name: "asc" },
       }),
     ]);
 
@@ -26,8 +28,12 @@ export async function GET() {
         success: true,
         data: {
           keywords: keywords.map((k) => k.name),
-          studies,
-          painLevels: painLevels.map((p) => p.description),
+          studies: studies.map((s) => ({
+            id: s.id,
+            name: s.name,
+            generalDefinition: `Estudio complementario de tipo ${s.name}`,
+          })),
+          painLevels: painLevels.map((p) => p.name),
         },
       },
       {

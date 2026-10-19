@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getOrCreateCatalogItem } from "@/lib/catalogo-service";
+import { CatalogType, CatalogOrigin } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const name = body?.name?.trim();
-    const generalDefinition = body?.generalDefinition?.trim() || null;
 
     if (!name) {
       return NextResponse.json(
@@ -14,13 +14,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const study = await prisma.studyCatalog.upsert({
-      where: { name },
-      update: { generalDefinition },
-      create: { name, generalDefinition },
+    const result = await getOrCreateCatalogItem(CatalogType.tipo_estudio, name, {
+      origin: CatalogOrigin.admin,
     });
 
-    return NextResponse.json({ success: true, data: study }, { status: 201 });
+    return NextResponse.json({ success: true, data: result.item }, { status: 201 });
   } catch (error) {
     console.error("Error al registrar nuevo estudio en catálogo:", error);
     return NextResponse.json(

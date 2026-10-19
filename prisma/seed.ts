@@ -1,85 +1,153 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, CatalogType, CatalogOrigin } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/**
+ * Normaliza una cadena para usarla como clave de catalogo.
+ * - Minusculas
+ * - Sin tildes (conserva la n)
+ * - Sin puntuacion final
+ * - Sin espacios extras
+ */
+function normalizar(entrada: string): { nombre: string; clave: string } | null {
+  const limpio = entrada
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:]+$/, "");
+  if (!limpio) return null;
+
+  const nombre =
+    limpio.charAt(0).toLocaleUpperCase("es") +
+    limpio.slice(1).toLocaleLowerCase("es");
+
+  const clave = limpio
+    .toLocaleLowerCase("es")
+    .replace(/n/g, "\u0001")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\u0001/g, "n");
+
+  return { nombre, clave };
+}
+
+async function upsertItem(
+  catalog: CatalogType,
+  raw: string,
+  origin: CatalogOrigin = CatalogOrigin.seed
+) {
+  const norm = normalizar(raw);
+  if (!norm) return;
+  const { nombre, clave } = norm;
+
+  await prisma.catalogItem.upsert({
+    where: { catalog_key: { catalog, key: clave } },
+    update: {},
+    create: { catalog, name: nombre, key: clave, origin, reviewed: true },
+  });
+}
+
 async function main() {
-  console.log("Iniciando seed de datos iniciales en Supabase...");
+  console.log("Iniciando seed del nuevo schema (8 fases)...\n");
 
-  // 1. PALABRAS CLAVE INICIALES
-  const initialKeywords = [
-    "Fiebre",
-    "Vómito en proyectil",
-    "Dolor abdominal",
-    "Irritabilidad",
-    "Deshidratación",
-    "Lactante",
-    "Alcalosis metabólica",
-    "Estenosis pilórica",
-    "Ictericia",
-    "Masa palpable"
+  // ─── 1. TIPOS DE ESTUDIO (lista cerrada, solo admin) ───────
+  // Los nombres se preservan tal cual (siglas) — el admin puede
+  // corregir el "nombre" desde el panel si la regla los deforma.
+  const tiposEstudio = [
+    "Rx",
+    "TAC",
+    "Ecografia",
+    "Estudio contrastado",
+    "RNM",
+    "Laboratorio",
   ];
-
-  for (const name of initialKeywords) {
-    await prisma.keyword.upsert({
-      where: { name },
+  for (const nombre of tiposEstudio) {
+    const clave = nombre.toLocaleLowerCase("es");
+    await prisma.catalogItem.upsert({
+      where: { catalog_key: { catalog: "tipo_estudio", key: clave } },
       update: {},
-      create: { name },
+      create: {
+        catalog: "tipo_estudio",
+        name: nombre,
+        key: clave,
+        origin: CatalogOrigin.seed,
+        reviewed: true,
+      },
     });
   }
-  console.log(`✓ ${initialKeywords.length} palabras clave cargadas en el catálogo.`);
+  console.log(`OK ${tiposEstudio.length} tipos de estudio`);
 
-  // 2. CATÁLOGO INICIAL DE ESTUDIOS DIAGNÓSTICOS
-  const initialStudies = [
-    {
-      name: "Ecografía Abdominal",
-      generalDefinition: "Permite evaluar con ultrasonido de alta resolución el grosor muscular pilórico (>3 mm) y longitud (>15-18 mm) sin radiación ionizante.",
-    },
-    {
-      name: "Radiografía de Abdomen AP",
-      generalDefinition: "Permite valorar la presencia de una gran cámara gástrica con escaso o nulo aire distal (signo de obstrucción gástrica).",
-    },
-    {
-      name: "Laboratorio: Ionograma y Gases (EAB)",
-      generalDefinition: "Permite diagnosticar la clásica alcalosis metabólica hipoclorémica e hipopotasémica por pérdida continuada de ácido clorhídrico en los vómitos.",
-    },
-    {
-      name: "Tomografía Axial Computarizada (TAC)",
-      generalDefinition: "Estudio tomográfico de alta resolución indicado para patología intraabdominal compleja o diagnósticos diferenciales atípicos.",
-    },
-    {
-      name: "Colon por Enema",
-      generalDefinition: "Estudio contrastado con fluoroscopia utilizado para evaluar la anatomía colónica y descartar invaginación intestinal o vólvulo.",
-    }
+  // ─── 2. MOTIVOS DE CONSULTA (caso Piloro) ──────────────────
+  const motivosConsulta = [
+    "Lactante vomitador",
+    "Abdomen agudo",
+    "Oclusion intestinal",
   ];
+  for (const m of motivosConsulta) await upsertItem("motivo_consulta", m);
+  console.log(`OK ${motivosConsulta.length} motivos de consulta`);
 
-  for (const study of initialStudies) {
-    await prisma.studyCatalog.upsert({
-      where: { name: study.name },
-      update: { generalDefinition: study.generalDefinition },
-      create: study,
-    });
-  }
-  console.log(`✓ ${initialStudies.length} estudios diagnósticos cargados en el catálogo.`);
+  // ─── 3. DIAGNOSTICOS ────────────────────────────────────────
+  const diagnosticos = ["Estenosis hipertrofica del piloro"];
+  for (const d of diagnosticos) await upsertItem("diagnostico", d);
+  console.log(`OK ${diagnosticos.length} diagnosticos`);
 
-  // 3. NIVELES DE DOLOR / HALLAZGOS FÍSICOS
-  const initialPainLevels = [
+  // ─── 4. PUNTOS ANATOMICOS ───────────────────────────────────
+  const puntosAnatomicos = [
+    "Cuadrante superior derecho",
+    "Epigastrio",
+    "Cuadrante inferior derecho",
+    "Cuadrante inferior izquierdo",
+    "Cuadrante superior izquierdo",
+    "Mesogastrio",
+    "Hipogastrio",
+  ];
+  for (const p of puntosAnatomicos) await upsertItem("punto_anatomico", p);
+  console.log(`OK ${puntosAnatomicos.length} puntos anatomicos`);
+
+  // ─── 5. NIVELES DE RESPUESTA ────────────────────────────────
+  // Migra los niveles de dolor que existian en el schema anterior.
+  const nivelesRespuesta = [
     "Sin alteraciones / Indoloro",
-    "Dolor leve a la palpación superficial",
-    "Dolor moderado a la palpación profunda",
+    "Dolor leve a la palpacion superficial",
+    "Dolor moderado a la palpacion profunda",
     "Dolor agudo / Llanto inconsolable al tacto",
-    "Defensa muscular involuntaria / Descompresión dolorosa (Blumberg +)"
+    "Defensa muscular involuntaria / Descompresion dolorosa (Blumberg +)",
+    "Masa palpable",
+    "Peristaltismo visible",
   ];
+  for (const n of nivelesRespuesta) await upsertItem("nivel_respuesta", n);
+  console.log(`OK ${nivelesRespuesta.length} niveles de respuesta`);
 
-  for (const description of initialPainLevels) {
-    await prisma.painLevelCatalog.upsert({
-      where: { description },
-      update: {},
-      create: { description },
-    });
-  }
-  console.log(`✓ ${initialPainLevels.length} niveles de dolor y examen físico registrados.`);
+  // ─── 6. TECNICAS QUIRURGICAS ────────────────────────────────
+  const tecnicas = ["Piloromiotomia de Ramstedt"];
+  for (const t of tecnicas) await upsertItem("tecnica_quirurgica", t);
+  console.log(`OK ${tecnicas.length} tecnicas quirurgicas`);
 
-  console.log("¡Seed completado con éxito!");
+  // ─── 7. COMPLICACIONES ──────────────────────────────────────
+  const complicaciones = [
+    "Perforacion de la mucosa",
+    "Infeccion de la herida",
+    "Dehiscencia de la herida",
+    "Laceraciones serosas",
+    "Vomitos postoperatorios persistentes",
+  ];
+  for (const c of complicaciones) await upsertItem("complicacion", c);
+  console.log(`OK ${complicaciones.length} complicaciones`);
+
+  // ─── 8. CAMPOS ADICIONALES ──────────────────────────────────
+  const camposAdicionales = [
+    "Presion arterial",
+    "Saturacion de O2",
+    "Frecuencia cardiaca",
+    "Frecuencia respiratoria",
+    "Temperatura",
+    "Escala de Glasgow",
+    "Peso",
+    "Talla",
+  ];
+  for (const c of camposAdicionales) await upsertItem("campo_adicional", c);
+  console.log(`OK ${camposAdicionales.length} campos adicionales`);
+
+  console.log("\nSeed completado con exito.");
 }
 
 main()

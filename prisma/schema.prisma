@@ -8,6 +8,31 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum CatalogType {
+  motivo_consulta
+  diagnostico
+  punto_anatomico
+  nivel_respuesta
+  tipo_estudio
+  tecnica_quirurgica
+  complicacion
+  campo_adicional
+
+  @@map("catalog_type")
+}
+
+enum CatalogOrigin {
+  admin
+  caso
+  seed
+
+  @@map("catalog_origin")
+}
+
 enum CaseStatus {
   DRAFT
   PUBLISHED
@@ -16,134 +41,241 @@ enum CaseStatus {
   @@map("case_status")
 }
 
-// 1. CASO CLÍNICO PRINCIPAL
-model Case {
-  id                         String              @id @default(cuid())
-  title                      String              @map("title")
-  consultationReason         String?             @map("consultation_reason") @db.Text
-  clinicalHistory            String              @map("clinical_history") @db.Text
-  hasVideo                   Boolean             @default(false) @map("has_video")
-  videoDescription           String?             @map("video_description") @db.Text
-  videoUrl                   String?             @map("video_url")
-  isPhysicalExamInteractive  Boolean             @default(true) @map("is_physical_exam_interactive")
-  physicalExamZone           String?             @map("physical_exam_zone")
-  physicalExamRefPoint       String?             @map("physical_exam_ref_point")
-  physicalExamStandard       String?             @map("physical_exam_standard") @db.Text
-  painLevel                  String              @map("pain_level")
-  treatmentQuestion          String?             @map("treatment_question") @db.Text
-  treatmentRaw               String?             @map("treatment_raw") @db.Text
-  clinicalSummary            String?             @map("clinical_summary") @db.Text
-  epidemiology               String?             @map("epidemiology") @db.Text
-  complications              String?             @map("complications") @db.Text
-  customFields               Json?               @default("[]") @map("custom_fields")
-  status                     CaseStatus          @default(PUBLISHED) @map("status")
-  createdAt                  DateTime            @default(now()) @map("created_at")
-  updatedAt                  DateTime            @updatedAt @map("updated_at")
+enum ExamModality {
+  interactive
+  narrative
 
-  // Relaciones
-  keywords                   CaseKeyword[]
-  studies                    CaseStudy[]
-  treatmentOptions           TreatmentOption[]
-  studentEvaluations         StudentEvaluation[]
+  @@map("exam_modality")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CATALOGO UNICO GENERICO
+// Un solo modelo para todos los tipos de elementos reutilizables.
+// La unicidad real la garantiza @@unique([catalog, key]).
+// ─────────────────────────────────────────────────────────────
+model CatalogItem {
+  id        String        @id @default(cuid())
+  catalog   CatalogType
+  /// Nombre que se muestra al usuario: "Oclusion intestinal"
+  name      String
+  /// Clave de comparacion: minusculas, sin tildes, conserva n. "oclusion intestinal"
+  key       String
+  active    Boolean       @default(true)
+  origin    CatalogOrigin @default(admin)
+  /// false cuando lo creo el cliente desde un caso - pendiente de revision en el panel
+  reviewed  Boolean       @default(true)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  // Relaciones inversas
+  casesAsPrincipalReason   Case[]               @relation("PrincipalReason")
+  casesAsFinalDiagnosis    Case[]               @relation("FinalDiagnosis")
+  casesAsSurgicalTechnique Case[]               @relation("SurgicalTechnique")
+  altReasons               CaseAltReason[]
+  examFindingsAnatomic     CaseExamFinding[]    @relation("PuntoAnatomico")
+  examFindingsLevel        CaseExamFinding[]    @relation("NivelRespuesta")
+  caseStudies              CaseStudyItem[]
+  caseDiagnoses            CaseDiagnosis[]
+  caseComplications        CaseComplication[]
+  caseAdditionalFields     CaseAdditionalField[]
+
+  @@unique([catalog, key])
+  @@index([catalog, active])
+  @@map("catalog_items")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CASO CLINICO PRINCIPAL
+// ─────────────────────────────────────────────────────────────
+model Case {
+  id     String     @id @default(cuid())
+  status CaseStatus @default(DRAFT)
+
+  // F1 - Motivo de consulta
+  /// Dato interno: no se muestra al estudiante antes de la fase de diagnostico
+  finalDiagnosisId  String?      @map("final_diagnosis_id")
+  finalDiagnosis    CatalogItem? @relation("FinalDiagnosis", fields: [finalDiagnosisId], references: [id], onDelete: SetNull)
+  principalReasonId String?      @map("principal_reason_id")
+  principalReason   CatalogItem? @relation("PrincipalReason", fields: [principalReasonId], references: [id], onDelete: SetNull)
+
+  // F2 - Signos y sintomas
+  signsSymptomsText String? @map("signs_symptoms_text") @db.Text
+  hasVideo          Boolean @default(false) @map("has_video")
+  videoUrl          String? @map("video_url")
+
+  // F3 - Examen fisico
+  examModality          ExamModality @default(interactive) @map("exam_modality")
+  physicalExamNarrative String?      @map("physical_exam_narrative") @db.Text
+
+  // F6 - Tratamiento
+  medicalTreatmentText  String?      @map("medical_treatment_text") @db.Text
+  includesSurgery       Boolean      @default(false) @map("includes_surgery")
+  surgicalTechniqueId   String?      @map("surgical_technique_id")
+  surgicalTechnique     CatalogItem? @relation("SurgicalTechnique", fields: [surgicalTechniqueId], references: [id], onDelete: SetNull)
+  surgicalNote          String?      @map("surgical_note") @db.Text
+  openApproach          String?      @map("open_approach") @db.Text
+  minimInvasiveApproach String?      @map("minim_invasive_approach") @db.Text
+
+  // F7 - Complicaciones
+  complicationsIntroText String? @map("complications_intro_text") @db.Text
+
+  // F8 - Resumen
+  summary String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Tablas hijas
+  altReasons       CaseAltReason[]
+  examFindings     CaseExamFinding[]
+  studies          CaseStudyItem[]
+  diagnoses        CaseDiagnosis[]
+  surgicalSteps    CaseSurgicalStep[]
+  complications    CaseComplication[]
+  additionalFields CaseAdditionalField[]
 
   @@index([status])
   @@index([createdAt])
   @@map("cases")
 }
 
-// 2. CATÁLOGO GLOBAL ACUMULATIVO DE PALABRAS CLAVE
-model Keyword {
-  id           String        @id @default(cuid())
-  name         String        @unique @map("name")
-  createdAt    DateTime      @default(now()) @map("created_at")
+// ─────────────────────────────────────────────────────────────
+// F1 - Motivos de consulta alternativos (M:N)
+// ─────────────────────────────────────────────────────────────
+model CaseAltReason {
+  caseId String      @map("case_id")
+  itemId String      @map("item_id")
 
-  caseKeywords CaseKeyword[]
+  case   Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  item   CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  @@map("keywords")
+  @@id([caseId, itemId])
+  @@index([itemId])
+  @@map("case_alt_reasons")
 }
 
-// TABLA PIVOTE M:N (Caso <-> Palabra Clave)
-model CaseKeyword {
-  caseId    String   @map("case_id")
-  keywordId String   @map("keyword_id")
+// ─────────────────────────────────────────────────────────────
+// F3 - Hallazgos del examen fisico
+// ─────────────────────────────────────────────────────────────
+model CaseExamFinding {
+  id               String       @id @default(cuid())
+  caseId           String       @map("case_id")
+  puntoAnatomicoId String?      @map("punto_anatomico_id")
+  hallazgo         String       @db.Text
+  nivelRespuestaId String?      @map("nivel_respuesta_id")
+  order            Int          @default(0)
 
-  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  keyword   Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
-
-  @@id([caseId, keywordId])
-  @@index([keywordId])
-  @@index([caseId])
-  @@map("case_keywords")
-}
-
-// 3. CATÁLOGO GLOBAL DE ESTUDIOS DIAGNÓSTICOS
-model StudyCatalog {
-  id                String      @id @default(cuid())
-  name              String      @unique @map("name")
-  generalDefinition String?     @map("general_definition") @db.Text
-  createdAt         DateTime    @default(now()) @map("created_at")
-
-  caseStudies       CaseStudy[]
-
-  @@map("study_catalog")
-}
-
-// 4. ESTUDIOS ASOCIADOS ESPECÍFICAMENTE AL CASO CLÍNICO
-model CaseStudy {
-  id              String        @id @default(cuid())
-  caseId          String        @map("case_id")
-  studyCatalogId  String        @map("study_catalog_id")
-  isAdequate      Boolean       @default(true) @map("is_adequate")
-  findings        String        @map("findings") @db.Text
-  imageUrl        String?       @map("image_url") @db.Text
-  imageName       String?       @map("image_name")
-  createdAt       DateTime      @default(now()) @map("created_at")
-
-  case            Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  studyCatalog    StudyCatalog  @relation(fields: [studyCatalogId], references: [id], onDelete: Restrict)
+  case             Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  puntoAnatomico   CatalogItem? @relation("PuntoAnatomico", fields: [puntoAnatomicoId], references: [id], onDelete: SetNull)
+  nivelRespuesta   CatalogItem? @relation("NivelRespuesta", fields: [nivelRespuestaId], references: [id], onDelete: SetNull)
 
   @@index([caseId])
-  @@index([studyCatalogId])
-  @@map("case_studies")
+  @@map("case_exam_findings")
 }
 
-// 5. CATÁLOGO GLOBAL ACUMULATIVO DE NIVELES DE DOLOR / HALLAZGOS
-model PainLevelCatalog {
-  id          String   @id @default(cuid())
-  description String   @unique @map("description")
-  createdAt   DateTime @default(now()) @map("created_at")
+// ─────────────────────────────────────────────────────────────
+// F4 - Estudios diagnosticos del caso
+// tipo_estudio es lista cerrada (seed): Rx, TAC, Ecografia, etc.
+// ─────────────────────────────────────────────────────────────
+model CaseStudyItem {
+  id           String      @id @default(cuid())
+  caseId       String      @map("case_id")
+  studyTypeId  String      @map("study_type_id")
+  /// true = se realizo; false = no se realizo ("No" tambien es informacion docente)
+  performed    Boolean     @default(false)
+  findingsText String?     @map("findings_text") @db.Text
 
-  @@map("pain_level_catalog")
+  case         Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  studyType    CatalogItem @relation(fields: [studyTypeId], references: [id], onDelete: Restrict)
+  images       CaseStudyImage[]
+
+  @@unique([caseId, studyTypeId])
+  @@index([caseId])
+  @@map("case_study_items")
 }
 
-// 6. OPCIONES TERAPÉUTICAS / CONDUCTA
-model TreatmentOption {
-  id          String   @id @default(cuid())
-  caseId      String   @map("case_id")
-  description String   @map("description") @db.Text
-  isCorrect   Boolean  @default(false) @map("is_correct")
-  feedback    String?  @map("feedback") @db.Text
-  order       Int      @default(0) @map("order")
-  createdAt   DateTime @default(now()) @map("created_at")
+model CaseStudyImage {
+  id          String        @id @default(cuid())
+  caseStudyId String        @map("case_study_id")
+  url         String
+  description String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
 
-  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseStudy   CaseStudyItem @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  @@index([caseStudyId])
+  @@map("case_study_images")
+}
+
+// ─────────────────────────────────────────────────────────────
+// F5 - Diagnosticos diferenciales (hasta 5, con orden)
+// ─────────────────────────────────────────────────────────────
+model CaseDiagnosis {
+  caseId    String      @map("case_id")
+  itemId    String      @map("item_id")
+  /// Posicion 1-5 dentro del caso
+  order     Int
+  /// El diagnostico correcto coincide con finalDiagnosisId del caso
+  isCorrect Boolean     @default(false) @map("is_correct")
+
+  case      Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  item      CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([caseId, itemId])
+  @@unique([caseId, order])
+  @@index([itemId])
+  @@map("case_diagnoses")
+}
+
+// ─────────────────────────────────────────────────────────────
+// F6 - Pasos tecnicos quirurgicos (lista ordenada, drag and drop)
+// ─────────────────────────────────────────────────────────────
+model CaseSurgicalStep {
+  id     String @id @default(cuid())
+  caseId String @map("case_id")
+  order  Int
+  text   String @db.Text
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, order])
+  @@index([caseId])
+  @@map("case_surgical_steps")
+}
+
+// ─────────────────────────────────────────────────────────────
+// F7 - Complicaciones del caso (con nota opcional por item)
+// ─────────────────────────────────────────────────────────────
+model CaseComplication {
+  caseId String      @map("case_id")
+  itemId String      @map("item_id")
+  /// Aclaracion especifica del caso, e.g. "mas frecuente en cirugia abierta"
+  note   String?     @db.Text
+
+  case   Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  item   CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([caseId, itemId])
+  @@index([itemId])
+  @@map("case_complications")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Campos adicionales dinamicos (Fases 2 y 3)
+// El nombre del campo viene del catalogo campo_adicional
+// ─────────────────────────────────────────────────────────────
+model CaseAdditionalField {
+  id      String      @id @default(cuid())
+  caseId  String      @map("case_id")
+  /// 2 = Signos y sintomas, 3 = Examen fisico
+  phase   Int
+  fieldId String      @map("field_id")
+  value   String      @db.Text
+
+  case    Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  field   CatalogItem @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   @@index([caseId])
-  @@map("treatment_options")
-}
-
-// 7. HISTORIAL / EVALUACIÓN DE SIMULACIÓN PARA ESTUDIANTES (FUTURA FASE)
-model StudentEvaluation {
-  id                  String   @id @default(cuid())
-  caseId              String   @map("case_id")
-  studentName         String?  @map("student_name")
-  score               Float?   @map("score")
-  studiesRequested    String[] @map("studies_requested")
-  selectedTreatmentId String?  @map("selected_treatment_id")
-  completedAt         DateTime @default(now()) @map("completed_at")
-
-  case                Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-
-  @@index([caseId])
-  @@map("student_evaluations")
+  @@index([fieldId])
+  @@map("case_additional_fields")
 }

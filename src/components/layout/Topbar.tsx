@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export type ActiveTab = "form" | "list" | "guide";
 
@@ -90,6 +91,17 @@ export function Topbar({ activeTab, onTabChange, savedCasesCount }: TopbarProps)
               </svg>
               Guía del Formulario
             </button>
+
+            <Link
+              href="/admin/catalogos"
+              className="nav-segmented-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap text-text-muted hover:text-teal hover:bg-teal/10"
+              title="Panel de administración de catálogos reutilizables"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+              Catálogos
+            </Link>
           </div>
         </div>
       </div>

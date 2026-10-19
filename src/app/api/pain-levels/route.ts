@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getOrCreateCatalogItem } from "@/lib/catalogo-service";
+import { CatalogType, CatalogOrigin } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
@@ -13,13 +14,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const painLevel = await prisma.painLevelCatalog.upsert({
-      where: { description },
-      update: {},
-      create: { description },
+    const result = await getOrCreateCatalogItem(CatalogType.nivel_respuesta, description, {
+      origin: CatalogOrigin.caso,
     });
 
-    return NextResponse.json({ success: true, data: painLevel }, { status: 201 });
+    return NextResponse.json({ success: true, data: result.item }, { status: 201 });
   } catch (error) {
     console.error("Error al registrar nivel de dolor:", error);
     return NextResponse.json(

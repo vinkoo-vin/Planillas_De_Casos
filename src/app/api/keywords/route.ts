@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getOrCreateCatalogItem } from "@/lib/catalogo-service";
+import { CatalogType, CatalogOrigin } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
@@ -8,22 +9,20 @@ export async function POST(req: Request) {
 
     if (!name) {
       return NextResponse.json(
-        { success: false, error: "El nombre de la palabra clave es requerido" },
+        { success: false, error: "El nombre es requerido" },
         { status: 400 }
       );
     }
 
-    const keyword = await prisma.keyword.upsert({
-      where: { name },
-      update: {},
-      create: { name },
+    const result = await getOrCreateCatalogItem(CatalogType.motivo_consulta, name, {
+      origin: CatalogOrigin.caso,
     });
 
-    return NextResponse.json({ success: true, data: keyword }, { status: 201 });
+    return NextResponse.json({ success: true, data: result.item }, { status: 201 });
   } catch (error) {
-    console.error("Error al registrar palabra clave:", error);
+    console.error("Error al registrar palabra clave/motivo:", error);
     return NextResponse.json(
-      { success: false, error: "Error interno al guardar palabra clave" },
+      { success: false, error: "Error interno al guardar elemento" },
       { status: 500 }
     );
   }
