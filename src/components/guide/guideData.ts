@@ -434,7 +434,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         required: true,
         description: "Botón único al pie para guardar o actualizar el caso clínico en el repositorio sin duplicación de acciones.",
         tips: "Valida automáticamente la integridad de los datos obligatorios antes de persistir.",
-        example: "[💾 Finalizar Caso y Guardar] / [💾 Actualizar Caso Clínico]",
+        example: "[Finalizar Caso y Guardar] / [Actualizar Caso Clínico]",
       },
     ],
     pedagogicalImpact:

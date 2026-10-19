@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export type FormPhase = 1 | 2 | 3 | 4;
+export type FormPhase = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface PhaseValidationState {
   hasErrors?: boolean;
@@ -20,63 +20,81 @@ interface PhaseDefinition {
   number: string;
   title: string;
   subtitle: string;
-  icon: string;
 }
 
-const PHASES: PhaseDefinition[] = [
+export const PHASES: PhaseDefinition[] = [
   {
     phase: 1,
     number: "1",
     title: "Motivo de Consulta",
-    subtitle: "Ingreso, motivo y semiología",
-    icon: "🩺",
+    subtitle: "Diagnóstico final y motivos",
   },
   {
     phase: 2,
     number: "2",
-    title: "Diagnóstico",
-    subtitle: "Estudios e imágenes clínicas",
-    icon: "🔬",
+    title: "Signos y Síntomas",
+    subtitle: "Anamnesis y video clínico",
   },
   {
     phase: 3,
     number: "3",
-    title: "Tratamiento",
-    subtitle: "Conductas y opciones terapéuticas",
-    icon: "💊",
+    title: "Examen Físico",
+    subtitle: "Puntos 3D o relato narrativo",
   },
   {
     phase: 4,
     number: "4",
-    title: "Resumen del Caso",
-    subtitle: "Revisión completa y finalización",
-    icon: "📋",
+    title: "Estudios",
+    subtitle: "Rx, TAC, Eco, Laboratorio",
+  },
+  {
+    phase: 5,
+    number: "5",
+    title: "Diagnóstico Diferencial",
+    subtitle: "5 opciones y correcto",
+  },
+  {
+    phase: 6,
+    number: "6",
+    title: "Tratamiento",
+    subtitle: "Médico y resolución quirúrgica",
+  },
+  {
+    phase: 7,
+    number: "7",
+    title: "Complicaciones",
+    subtitle: "Riesgos y notas docentes",
+  },
+  {
+    phase: 8,
+    number: "8",
+    title: "Resumen",
+    subtitle: "Epílogo docente y cierre",
   },
 ];
 
 export const CaseStepper = React.memo(function CaseStepper({
   currentPhase,
   onSelectPhase,
-  phaseValidation = { 1: {}, 2: {}, 3: {}, 4: {} },
+  phaseValidation = { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {} },
 }: CaseStepperProps) {
-
   const handleKeyDown = (e: React.KeyboardEvent, phase: FormPhase) => {
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      onSelectPhase((phase < 4 ? phase + 1 : 1) as FormPhase);
+      onSelectPhase((phase < 8 ? phase + 1 : 1) as FormPhase);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      onSelectPhase((phase > 1 ? phase - 1 : 4) as FormPhase);
+      onSelectPhase((phase > 1 ? phase - 1 : 8) as FormPhase);
     }
   };
 
   return (
     <div className="case-stepper mb-8">
-      {/* BARRA DE NAVEGACIÓN EN PESTAÑAS CON ACCESIBILIDAD ARIA */}
+      {/* BARRA DE NAVEGACIÓN EN PESTAÑAS (8 FASES) */}
       <nav
         role="tablist"
         aria-label="Fases del caso clínico"
-        className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 p-1.5 sm:p-2 rounded-2xl bg-surface-subtle border border-border-subtle shadow-sm"
+        className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 p-1.5 sm:p-2 rounded-2xl bg-surface-subtle border border-border-subtle shadow-sm"
       >
         {PHASES.map((p) => {
           const isActive = currentPhase === p.phase;
@@ -95,56 +113,47 @@ export const CaseStepper = React.memo(function CaseStepper({
               tabIndex={isActive ? 0 : -1}
               onClick={() => onSelectPhase(p.phase)}
               onKeyDown={(e) => handleKeyDown(e, p.phase)}
-              className={`stepper-tab relative flex items-center gap-3 p-3 sm:p-3.5 rounded-xl text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${
+              className={`stepper-tab relative flex flex-col sm:flex-row items-center sm:items-start gap-2 p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${
                 isActive
                   ? "bg-card-bg border border-teal-border shadow-[var(--shadow-extruded-xs)] text-text-main"
-                  : "bg-transparent border border-transparent hover:bg-card-bg/60 text-text-muted hover:text-text-main"
+                  : "hover:bg-card-bg/60 text-text-muted hover:text-text-main"
               }`}
             >
-              {/* ÍCONO / ESTADO */}
-              <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform ${
-                  isActive
-                    ? "bg-teal text-white shadow-sm scale-105"
-                    : isComplete
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                    : "bg-surface text-text-body border border-border-subtle"
-                }`}
-                aria-hidden="true"
-              >
-                {isComplete && !isActive ? "✓" : p.icon}
-              </div>
-
-              {/* CONTENIDO TEXTUAL */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-semibold text-text-muted">
-                    Fase {p.number}
-                  </span>
-                  {hasErrors && (
-                    <span
-                      title="Campos obligatorios pendientes"
-                      className="w-2 h-2 rounded-full bg-rose-500 animate-pulse inline-block"
-                      aria-label="Contiene errores o campos pendientes"
-                    />
-                  )}
-                </div>
-                <div
-                  className={`text-xs sm:text-sm font-bold truncate leading-tight ${
-                    isActive ? "text-text-main" : "text-text-body"
+              {/* ÍCONO Y NÚMERO */}
+              <div className="relative shrink-0 flex items-center justify-center">
+                <span
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold transition-all shadow-xs ${
+                    isActive
+                      ? "bg-teal text-white shadow-teal/20"
+                      : isComplete
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                      : "bg-surface border border-border-subtle text-text-muted"
                   }`}
                 >
-                  {p.title}
-                </div>
-                <div className="text-[11px] text-text-muted truncate hidden sm:block mt-0.5">
-                  {p.subtitle}
-                </div>
+                  {isComplete ? "✓" : p.number}
+                </span>
+
+                {/* INDICADOR DE ERROR */}
+                {hasErrors && !isActive && (
+                  <span
+                    className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-card-bg animate-pulse"
+                    title="Esta fase contiene campos incompletos"
+                  />
+                )}
               </div>
 
-              {/* LÍNEA INDICADORA ACTIVA */}
-              {isActive && (
-                <span className="absolute -bottom-1.5 left-4 right-4 h-1 rounded-full bg-teal" aria-hidden="true" />
-              )}
+              {/* TÍTULO Y SUBTÍTULO */}
+              <div className="stepper-tab-content min-w-0 flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-1">
+                  <span className="text-[10px] font-bold text-teal-text">F{p.number}</span>
+                  <span className="stepper-tab-title font-bold text-xs truncate block text-text-main">
+                    {p.title}
+                  </span>
+                </div>
+                <span className="stepper-tab-desc text-[10px] text-text-muted truncate hidden sm:block">
+                  {p.subtitle}
+                </span>
+              </div>
             </button>
           );
         })}

@@ -161,7 +161,7 @@ export default function Home() {
   }, [savedCasesList]);
 
   const totalTreatmentsCount = useMemo(() => {
-    return savedCasesList.reduce((acc, c) => acc + (c.treatmentOptions?.length || 0), 0);
+    return savedCasesList.reduce((acc, c) => acc + (c.diagnoses?.length || 0), 0);
   }, [savedCasesList]);
 
   const handleCaseCreated = useCallback((newCase: SavedCase) => {
@@ -296,8 +296,11 @@ export default function Home() {
               className="mb-6 p-4 rounded-2xl bg-surface-subtle border border-border-subtle flex items-center justify-between gap-4 flex-wrap"
             >
               <div className="flex items-center gap-3 text-xs sm:text-sm text-text-body">
-                <span className="w-8 h-8 rounded-xl bg-primary-light text-primary flex items-center justify-center font-bold text-base shrink-0">
-                  📖
+                <span className="w-8 h-8 rounded-xl bg-primary-light text-primary flex items-center justify-center text-sm shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                  </svg>
                 </span>
                 <div>
                   <span className="font-bold text-text-main">¿Primera vez o dudas con los campos?</span>{" "}

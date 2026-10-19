@@ -1,57 +1,121 @@
-import { SavedCase, CaseDraft, AddedStudy, CustomFieldItem } from "@/types/clinical";
+import {
+  SavedCase,
+  CaseDraft,
+  ExamFindingDraft,
+  StudyItemDraft,
+  DiagnosisDraft,
+  SurgicalStepDraft,
+  ComplicationDraft,
+  AdditionalFieldDraft,
+} from "@/types/clinical";
 
 /**
- * Transforma un caso clínico guardado en la base de datos (SavedCase)
- * a un borrador editable para el formulario (CaseDraft), reconstruyendo:
- * - Opciones terapéuticas con sus etiquetas [CORRECTA].
- * - Lista de estudios complementarios con imágenes WebP y hallazgos.
- * - Palabras clave seleccionadas.
- * - Campos adicionales personalizados del doctor.
+ * Transforma un caso guardado (SavedCase) a un borrador editable (CaseDraft).
+ * Se usa cuando el usuario hace click en "Editar" en la tabla de casos.
  */
 export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
-  const reconstructedTreatments =
-    savedCase.treatmentOptions && savedCase.treatmentOptions.length > 0
-      ? savedCase.treatmentOptions
-          .map((t) => `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}${t.feedback ? ` | Feedback: ${t.feedback}` : ""}`)
-          .join("\n")
-      : "";
-
-  const reconstructedStudies: AddedStudy[] = (savedCase.studies || []).map((s) => ({
-    name: s.studyCatalog?.name || "",
-    isAdequate: s.isAdequate,
-    findings: s.findings || "",
-    imageUrl: s.imageUrl || null,
-    imageName: s.imageName || null,
+  // F1 - Motivos
+  const altReasons = (savedCase.altReasons || []).map((ar) => ({
+    itemId: ar.itemId,
+    itemName: ar.item?.name || "",
   }));
 
-  const reconstructedKeywords = (savedCase.keywords || []).map((kw) => kw.keyword.name);
+  // F3 - Hallazgos del examen físico
+  const examFindings: ExamFindingDraft[] = (savedCase.examFindings || []).map((f) => ({
+    id: f.id,
+    puntoAnatomicoId: f.puntoAnatomicoId ?? null,
+    puntoAnatomicoName: f.puntoAnatomico?.name ?? null,
+    hallazgo: f.hallazgo,
+    nivelRespuestaId: f.nivelRespuestaId ?? null,
+    nivelRespuestaName: f.nivelRespuesta?.name ?? null,
+    order: f.order,
+  }));
 
-  const reconstructedCustomFields: CustomFieldItem[] = Array.isArray(savedCase.customFields)
-    ? (savedCase.customFields as unknown as CustomFieldItem[])
-    : [];
+  // F4 - Estudios
+  const studies: StudyItemDraft[] = (savedCase.studies || []).map((s) => ({
+    studyTypeId: s.studyTypeId,
+    studyTypeName: s.studyType?.name || "",
+    performed: s.performed,
+    findingsText: s.findingsText || "",
+  }));
+
+  // F5 - Diagnósticos
+  const diagnoses: DiagnosisDraft[] = (savedCase.diagnoses || []).map((d) => ({
+    itemId: d.itemId,
+    itemName: d.item?.name || "",
+    order: d.order,
+    isCorrect: d.isCorrect,
+  }));
+
+  // F6 - Pasos quirúrgicos
+  const surgicalSteps: SurgicalStepDraft[] = (savedCase.surgicalSteps || []).map((s) => ({
+    id: s.id,
+    order: s.order,
+    text: s.text,
+  }));
+
+  // F7 - Complicaciones
+  const complications: ComplicationDraft[] = (savedCase.complications || []).map((c) => ({
+    itemId: c.itemId,
+    itemName: c.item?.name || "",
+    note: c.note || "",
+  }));
+
+  // Campos adicionales
+  const additionalFields: AdditionalFieldDraft[] = (savedCase.additionalFields || []).map((f) => ({
+    id: f.id,
+    phase: f.phase,
+    fieldId: f.fieldId,
+    fieldName: f.field?.name || "",
+    value: f.value,
+  }));
 
   return {
     id: savedCase.id,
     isEditing: true,
-    title: savedCase.title,
-    consultationReason: savedCase.consultationReason || "",
-    clinicalHistory: savedCase.clinicalHistory,
-    treatmentQuestion: savedCase.treatmentQuestion || "",
-    treatmentOptions: reconstructedTreatments,
-    structuredTreatments: savedCase.treatmentOptions && savedCase.treatmentOptions.length > 0 ? savedCase.treatmentOptions : [],
-    selectedKeywords: reconstructedKeywords,
-    isInteractiveExam: savedCase.isPhysicalExamInteractive,
-    examZone: savedCase.physicalExamZone || "",
-    examRefPoint: savedCase.physicalExamRefPoint || "",
-    examStandardText: savedCase.physicalExamStandard || "",
-    painLevel: savedCase.painLevel,
+    status: savedCase.status,
+
+    // F1
+    finalDiagnosisId: savedCase.finalDiagnosisId ?? null,
+    finalDiagnosisName: savedCase.finalDiagnosis?.name ?? null,
+    principalReasonId: savedCase.principalReasonId ?? null,
+    principalReasonName: savedCase.principalReason?.name ?? null,
+    altReasons,
+
+    // F2
+    signsSymptomsText: savedCase.signsSymptomsText ?? "",
     hasVideo: savedCase.hasVideo,
-    videoDescription: savedCase.videoDescription || "",
-    clinicalSummary: savedCase.clinicalSummary || "",
-    epidemiology: savedCase.epidemiology || "",
-    complications: savedCase.complications || "",
-    addedStudies: reconstructedStudies,
-    customFields: reconstructedCustomFields,
+    videoUrl: savedCase.videoUrl ?? "",
+
+    // F3
+    examModality: savedCase.examModality,
+    physicalExamNarrative: savedCase.physicalExamNarrative ?? "",
+    examFindings,
+
+    // F4
+    studies,
+
+    // F5
+    diagnoses,
+
+    // F6
+    medicalTreatmentText: savedCase.medicalTreatmentText ?? "",
+    includesSurgery: savedCase.includesSurgery,
+    surgicalTechniqueId: savedCase.surgicalTechniqueId ?? null,
+    surgicalTechniqueName: savedCase.surgicalTechnique?.name ?? null,
+    surgicalNote: savedCase.surgicalNote ?? "",
+    openApproach: savedCase.openApproach ?? "",
+    minimInvasiveApproach: savedCase.minimInvasiveApproach ?? "",
+    surgicalSteps,
+
+    // F7
+    complicationsIntroText: savedCase.complicationsIntroText ?? "",
+    complications,
+
+    // F8
+    summary: savedCase.summary ?? "",
+
+    additionalFields,
   };
 }
 

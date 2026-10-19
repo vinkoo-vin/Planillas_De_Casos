@@ -36,21 +36,19 @@ export const CasesTable = React.memo(function CasesTable({
     if (!deferredSearch.trim()) return cases;
     const term = deferredSearch.toLowerCase();
     return cases.filter((c) => {
-      const matchTitle = c.title.toLowerCase().includes(term);
-      const matchReason = c.consultationReason?.toLowerCase().includes(term);
-      const matchHistory = c.clinicalHistory?.toLowerCase().includes(term);
-      const matchSummary = c.clinicalSummary?.toLowerCase().includes(term);
-      const matchEpidemiology = c.epidemiology?.toLowerCase().includes(term);
-      const matchComplications = c.complications?.toLowerCase().includes(term);
-      const matchKw = c.keywords?.some((k) => k.keyword?.name?.toLowerCase().includes(term));
+      const matchDiagnosis = c.finalDiagnosis?.name?.toLowerCase().includes(term);
+      const matchReason = c.principalReason?.name?.toLowerCase().includes(term);
+      const matchHistory = c.signsSymptomsText?.toLowerCase().includes(term);
+      const matchSummary = c.summary?.toLowerCase().includes(term);
+      const matchAltReasons = c.altReasons?.some((ar) => ar.item?.name?.toLowerCase().includes(term));
+      const matchComplications = c.complications?.some((comp) => comp.item?.name?.toLowerCase().includes(term));
       return (
-        matchTitle ||
+        Boolean(matchDiagnosis) ||
         Boolean(matchReason) ||
         Boolean(matchHistory) ||
         Boolean(matchSummary) ||
-        Boolean(matchEpidemiology) ||
-        Boolean(matchComplications) ||
-        Boolean(matchKw)
+        Boolean(matchAltReasons) ||
+        Boolean(matchComplications)
       );
     });
   }, [cases, deferredSearch]);
@@ -164,7 +162,7 @@ export const CasesTable = React.memo(function CasesTable({
             <thead>
               <tr>
                 <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider">Caso Clínico</th>
-                <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider">Palabras Clave</th>
+                <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider">Motivos Alternos</th>
                 <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider">Examen Físico</th>
                 <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider">Contenido</th>
                 <th className="py-3.5 px-5 text-xs font-bold uppercase tracking-wider text-right">Acciones</th>
@@ -180,15 +178,15 @@ export const CasesTable = React.memo(function CasesTable({
                   <td className="py-4 px-5">
                     <div className="case-main-cell flex flex-col gap-1">
                       <span className="case-title-text font-bold text-base text-text-main leading-snug">
-                        {c.title}
+                        {c.finalDiagnosis?.name || "Caso clínico sin diagnóstico"}
                       </span>
-                      {c.consultationReason && (
+                      {c.principalReason?.name && (
                         <span className="text-xs font-semibold text-teal-text line-clamp-1">
-                          Motivo: {c.consultationReason}
+                          Motivo: {c.principalReason.name}
                         </span>
                       )}
                       <span className="text-xs text-text-muted line-clamp-1">
-                        {c.clinicalHistory?.slice(0, 110)}...
+                        {c.signsSymptomsText ? `${c.signsSymptomsText.slice(0, 110)}...` : "Sin anamnesis"}
                       </span>
                       <span className="case-status-badge text-[11px] font-bold px-2 py-0.5 rounded-md w-fit">
                         {formatCaseDate(c.createdAt, "short")}
@@ -198,30 +196,32 @@ export const CasesTable = React.memo(function CasesTable({
 
                   <td className="py-4 px-5">
                     <div className="flex flex-wrap gap-1 max-w-[220px]">
-                      {c.keywords?.slice(0, 3).map((kw, i) => (
+                      {c.altReasons?.slice(0, 3).map((ar, i) => (
                         <span
-                          key={kw.keyword?.name || i}
+                          key={ar.item?.id || i}
                           className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-surface-subtle border border-border-subtle text-text-main"
                         >
-                          {kw.keyword.name}
+                          {ar.item?.name}
                         </span>
                       ))}
-                      {c.keywords?.length > 3 && (
+                      {(c.altReasons?.length || 0) > 3 && (
                         <span className="text-[11px] font-bold text-text-muted px-1">
-                          +{c.keywords.length - 3}
+                          +{(c.altReasons?.length || 0) - 3}
                         </span>
+                      )}
+                      {(!c.altReasons || c.altReasons.length === 0) && (
+                        <span className="text-xs text-text-muted italic">Sin alternos</span>
                       )}
                     </div>
                   </td>
 
-
                   <td className="py-4 px-5">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs font-semibold text-text-main">
-                        {c.isPhysicalExamInteractive ? "Interactivo" : "Estándar"}
+                        {c.examModality === "interactive" ? "Interactivo" : "Narrativo"}
                       </span>
                       <span className="text-[11px] text-teal-text font-semibold">
-                        {c.painLevel}
+                        {c.examFindings?.length ? `${c.examFindings.length} hallazgo(s)` : "Sin puntos cargados"}
                       </span>
                     </div>
                   </td>
@@ -234,11 +234,11 @@ export const CasesTable = React.memo(function CasesTable({
                         </svg>
                         {c.studies?.length || 0}
                       </span>
-                      <span className="stat-pill text-xs font-semibold px-2 py-1 rounded-lg" title="Opciones terapéuticas">
+                      <span className="stat-pill text-xs font-semibold px-2 py-1 rounded-lg" title="Diagnósticos diferenciales">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
-                        {c.treatmentOptions?.length || 0}
+                        {c.diagnoses?.length || 0}
                       </span>
                     </div>
                   </td>
@@ -274,7 +274,7 @@ export const CasesTable = React.memo(function CasesTable({
                           type="button"
                           disabled={deletingId === c.id}
                           className="btn-delete-case inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={() => onDelete(c.id, c.title)}
+                          onClick={() => onDelete(c.id, c.finalDiagnosis?.name || "Caso clínico")}
                           title="Eliminar este caso clínico"
                         >
                           <TrashIcon width={13} height={13} />

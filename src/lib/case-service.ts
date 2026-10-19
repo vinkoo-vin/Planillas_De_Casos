@@ -1,21 +1,91 @@
 import prisma from "@/lib/prisma";
-import type { AddedStudy, CustomFieldItem } from "@/types/clinical";
 
-export interface TreatmentOptionParsed {
-  description: string;
-  isCorrect: boolean;
-  feedback: string | null;
-  order: number;
+// ─────────────────────────────────────────────────────────────
+// Tipos de entrada para crear/actualizar un caso
+// ─────────────────────────────────────────────────────────────
+
+export interface ExamFindingInput {
+  puntoAnatomicoId?: string | null;
+  hallazgo: string;
+  nivelRespuestaId?: string | null;
+  order?: number;
 }
 
-export type RawStudyInput = Partial<AddedStudy>;
+export interface StudyItemInput {
+  studyTypeId: string;
+  performed: boolean;
+  findingsText?: string | null;
+}
 
-export interface ValidatedStudyInput {
-  studyCatalogId: string;
-  isAdequate: boolean;
-  findings: string;
-  imageUrl: string | null;
-  imageName: string | null;
+export interface DiagnosisInput {
+  itemId: string;
+  order: number;
+  isCorrect?: boolean;
+}
+
+export interface SurgicalStepInput {
+  order: number;
+  text: string;
+}
+
+export interface ComplicationInput {
+  itemId: string;
+  note?: string | null;
+}
+
+export interface AdditionalFieldInput {
+  phase: number;
+  fieldId: string;
+  value: string;
+}
+
+export interface AltReasonInput {
+  itemId: string;
+}
+
+export interface CasePayloadData {
+  // F1
+  finalDiagnosisId?: string | null;
+  principalReasonId?: string | null;
+  altReasons?: AltReasonInput[];
+
+  // F2
+  signsSymptomsText?: string | null;
+  hasVideo?: boolean;
+  videoUrl?: string | null;
+
+  // F3
+  examModality?: "interactive" | "narrative";
+  physicalExamNarrative?: string | null;
+  examFindings?: ExamFindingInput[];
+
+  // F4
+  studies?: StudyItemInput[];
+
+  // F5
+  diagnoses?: DiagnosisInput[];
+
+  // F6
+  medicalTreatmentText?: string | null;
+  includesSurgery?: boolean;
+  surgicalTechniqueId?: string | null;
+  surgicalNote?: string | null;
+  openApproach?: string | null;
+  minimInvasiveApproach?: string | null;
+  surgicalSteps?: SurgicalStepInput[];
+
+  // F7
+  complicationsIntroText?: string | null;
+  complications?: ComplicationInput[];
+
+  // F8
+  summary?: string | null;
+
+  // Campos adicionales (fases 2 y 3)
+  additionalFields?: AdditionalFieldInput[];
+
+  // Estado
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 }
 
 export interface CasePayloadValidation {
@@ -24,311 +94,239 @@ export interface CasePayloadValidation {
 }
 
 /**
- * Valida los campos obligatorios para la creación o actualización de un caso clínico.
+ * Valida que el payload tenga los campos mínimos requeridos.
+ * El caso puede guardarse como borrador sin muchos datos.
  */
-export function validateCaseInput(body: Record<string, unknown>): CasePayloadValidation {
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  const clinicalHistory = typeof body.clinicalHistory === "string" ? body.clinicalHistory.trim() : "";
-  const painLevel = typeof body.painLevel === "string" ? body.painLevel.trim() : "";
-
-  if (!title) {
-    return { isValid: false, error: "El título del caso es obligatorio" };
-  }
-  if (!clinicalHistory) {
-    return { isValid: false, error: "La descripción clínica es obligatoria" };
-  }
-  if (!painLevel) {
-    return { isValid: false, error: "El hallazgo del examen físico o nivel de dolor es obligatorio" };
+export function validateCaseInput(
+  body: Record<string, unknown>
+): CasePayloadValidation {
+  // Un caso puede guardarse como borrador sin campos obligatorios.
+  // Validaciones de negocio se pueden agregar aquí a medida que se define F1.
+  if (body.status && !["DRAFT", "PUBLISHED", "ARCHIVED"].includes(body.status as string)) {
+    return { isValid: false, error: "Estado inválido" };
   }
   return { isValid: true };
 }
 
-/**
- * Convierte el texto libre de opciones terapéuticas a registros estructurados,
- * reconociendo automáticamente las etiquetas [CORRECTA].
- */
-export function parseTreatmentRaw(treatmentRaw?: string | null): TreatmentOptionParsed[] {
-  if (!treatmentRaw) return [];
-
-  const lines = treatmentRaw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  return lines.map((line, index) => {
-    const isCorrect = /\[CORRECTA\]/i.test(line);
-
-    // Soporte para feedback pedagógico: "| Feedback: ...", "| Devolución: ...", o "[FEEDBACK: ...]"
-    let feedback: string | null = null;
-    let textToClean = line.replace(/\[CORRECTA\]/gi, "");
-
-    const feedbackPipeMatch = textToClean.match(/\|\s*(?:feedback|devoluci[oó]n)\s*:\s*(.+)$/i);
-    const feedbackBracketMatch = textToClean.match(/\[(?:feedback|devoluci[oó]n)\s*:\s*([^\]]+)\]/i);
-
-    if (feedbackPipeMatch) {
-      feedback = feedbackPipeMatch[1].trim();
-      textToClean = textToClean.replace(/\|\s*(?:feedback|devoluci[oó]n)\s*:\s*.+$/i, "");
-    } else if (feedbackBracketMatch) {
-      feedback = feedbackBracketMatch[1].trim();
-      textToClean = textToClean.replace(/\[(?:feedback|devoluci[oó]n)\s*:\s*[^\]]+\]/gi, "");
-    }
-
-    const cleanDescription = textToClean
-      .replace(/^[-*•\d.]\s*/, "")
-      .trim();
-
-    return {
-      description: cleanDescription || line,
-      isCorrect,
-      feedback: feedback || null,
-      order: index + 1,
-    };
-  });
-}
-
-/**
- * Sincroniza en lote palabras clave contra la base de datos:
- * busca las existentes, crea las faltantes y retorna los IDs para vinculación.
- */
-export async function syncKeywords(keywords: string[] = []): Promise<{ id: string }[]> {
-  const validNames = Array.from(
-    new Set(
-      keywords
-        .map((k) => k?.trim())
-        .filter((k): k is string => Boolean(k))
-    )
-  );
-
-  if (validNames.length === 0) return [];
-
-  // 1. Buscar existentes en 1 sola consulta
-  const existing = await prisma.keyword.findMany({
-    where: { name: { in: validNames } },
-    select: { id: true, name: true },
-  });
-  const map = new Map(existing.map((k) => [k.name, k.id]));
-
-  // 2. Crear en lote las faltantes
-  const missing = validNames.filter((name) => !map.has(name));
-  if (missing.length > 0) {
-    await prisma.keyword.createMany({
-      data: missing.map((name) => ({ name })),
-      skipDuplicates: true,
-    });
-    const newlyCreated = await prisma.keyword.findMany({
-      where: { name: { in: missing } },
-      select: { id: true, name: true },
-    });
-    newlyCreated.forEach((k) => map.set(k.name, k.id));
-  }
-
-  return validNames
-    .map((name) => {
-      const id = map.get(name);
-      return id ? { id } : null;
-    })
-    .filter((k): k is { id: string } => k !== null);
-}
-
-/**
- * Sincroniza en lote los estudios complementarios contra el catálogo global
- * y prepara las entradas para CaseStudy (incluyendo imágenes WebP y hallazgos).
- */
-export async function syncStudies(studies: RawStudyInput[] = []): Promise<ValidatedStudyInput[]> {
-  const validRaw = studies.filter((st) => Boolean(st?.name?.trim()));
-  const uniqueNames = Array.from(new Set(validRaw.map((s) => s.name!.trim())));
-
-  if (uniqueNames.length === 0) return [];
-
-  // 1. Buscar en el catálogo
-  const existing = await prisma.studyCatalog.findMany({
-    where: { name: { in: uniqueNames } },
-    select: { id: true, name: true },
-  });
-  const map = new Map(existing.map((s) => [s.name, s.id]));
-
-  // 2. Crear en lote los que no existan en el catálogo
-  const missing = uniqueNames.filter((name) => !map.has(name));
-  if (missing.length > 0) {
-    const definitionsMap = new Map(
-      validRaw.map((s) => [s.name!.trim(), s.definition?.trim() || "Estudio complementario de diagnóstico"])
-    );
-    await prisma.studyCatalog.createMany({
-      data: missing.map((name) => ({
-        name,
-        generalDefinition: definitionsMap.get(name) || "Estudio complementario de diagnóstico",
-      })),
-      skipDuplicates: true,
-    });
-    const newlyCreated = await prisma.studyCatalog.findMany({
-      where: { name: { in: missing } },
-      select: { id: true, name: true },
-    });
-    newlyCreated.forEach((s) => map.set(s.name, s.id));
-  }
-
-  // 3. Mapear a la estructura de CaseStudy
-  return validRaw
-    .map((st) => {
-      const catalogId = map.get(st.name!.trim());
-      if (!catalogId) return null;
-      return {
-        studyCatalogId: catalogId,
-        isAdequate: st.isAdequate ?? true,
-        findings: st.findings?.trim() || "Sin hallazgos especificados",
-        imageUrl: st.imageUrl || null,
-        imageName: st.imageName || null,
-      };
-    })
-    .filter((s): s is ValidatedStudyInput => s !== null);
-}
-
-/**
- * Selector estándar para incluir todas las relaciones necesarias en una ficha de caso.
- */
+// ─────────────────────────────────────────────────────────────
+// Include estándar para una ficha de caso completa
+// ─────────────────────────────────────────────────────────────
 export const caseDetailIncludes = {
-  keywords: { include: { keyword: true } },
-  studies: { include: { studyCatalog: true } },
-  treatmentOptions: { orderBy: { order: "asc" as const } },
-};
+  principalReason: {
+    select: { id: true, name: true, catalog: true },
+  },
+  finalDiagnosis: {
+    select: { id: true, name: true, catalog: true },
+  },
+  surgicalTechnique: {
+    select: { id: true, name: true, catalog: true },
+  },
+  altReasons: {
+    include: {
+      item: { select: { id: true, name: true, catalog: true } },
+    },
+    orderBy: { itemId: "asc" as const },
+  },
+  examFindings: {
+    include: {
+      puntoAnatomico: { select: { id: true, name: true } },
+      nivelRespuesta: { select: { id: true, name: true } },
+    },
+    orderBy: { order: "asc" as const },
+  },
+  studies: {
+    include: {
+      studyType: { select: { id: true, name: true } },
+      images: { orderBy: { createdAt: "asc" as const } },
+    },
+    orderBy: { studyTypeId: "asc" as const },
+  },
+  diagnoses: {
+    include: {
+      item: { select: { id: true, name: true, catalog: true } },
+    },
+    orderBy: { order: "asc" as const },
+  },
+  surgicalSteps: {
+    orderBy: { order: "asc" as const },
+  },
+  complications: {
+    include: {
+      item: { select: { id: true, name: true, catalog: true } },
+    },
+    orderBy: { itemId: "asc" as const },
+  },
+  additionalFields: {
+    include: {
+      field: { select: { id: true, name: true, catalog: true } },
+    },
+    orderBy: { phase: "asc" as const },
+  },
+} as const;
 
-export interface CasePayloadData {
-  title: string;
-  consultationReason?: string | null;
-  clinicalHistory: string;
-  hasVideo?: boolean;
-  videoDescription?: string | null;
-  videoUrl?: string | null;
-  isPhysicalExamInteractive?: boolean;
-  physicalExamZone?: string | null;
-  physicalExamRefPoint?: string | null;
-  physicalExamStandard?: string | null;
-  painLevel: string;
-  treatmentQuestion?: string | null;
-  treatmentRaw?: string | null;
-  structuredTreatments?: TreatmentOptionParsed[];
-  clinicalSummary?: string | null;
-  epidemiology?: string | null;
-  complications?: string | null;
-  customFields?: CustomFieldItem[];
-  keywords?: string[];
-  studies?: RawStudyInput[];
+// ─────────────────────────────────────────────────────────────
+// Select liviano para la lista de casos (sin tablas hijas grandes)
+// ─────────────────────────────────────────────────────────────
+export const caseListSelect = {
+  id: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  hasVideo: true,
+  examModality: true,
+  includesSurgery: true,
+  principalReason: {
+    select: { id: true, name: true },
+  },
+  finalDiagnosis: {
+    select: { id: true, name: true },
+  },
+  diagnoses: {
+    include: {
+      item: { select: { id: true, name: true } },
+    },
+    orderBy: { order: "asc" as const },
+    take: 5,
+  },
+  studies: {
+    select: {
+      id: true,
+      performed: true,
+      studyType: { select: { id: true, name: true } },
+    },
+  },
+} as const;
+
+// ─────────────────────────────────────────────────────────────
+// Preparar el payload para crear o actualizar un caso
+// ─────────────────────────────────────────────────────────────
+export function prepareCaseBaseData(body: CasePayloadData) {
+  return {
+    status: (body.status ?? "DRAFT") as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+
+    // F1
+    finalDiagnosisId: body.finalDiagnosisId ?? null,
+    principalReasonId: body.principalReasonId ?? null,
+
+    // F2
+    signsSymptomsText: body.signsSymptomsText?.trim() ?? null,
+    hasVideo: Boolean(body.hasVideo),
+    videoUrl: body.videoUrl?.trim() ?? null,
+
+    // F3
+    examModality: (body.examModality ?? "interactive") as "interactive" | "narrative",
+    physicalExamNarrative: body.physicalExamNarrative?.trim() ?? null,
+
+    // F6
+    medicalTreatmentText: body.medicalTreatmentText?.trim() ?? null,
+    includesSurgery: Boolean(body.includesSurgery),
+    surgicalTechniqueId: body.surgicalTechniqueId ?? null,
+    surgicalNote: body.surgicalNote?.trim() ?? null,
+    openApproach: body.openApproach?.trim() ?? null,
+    minimInvasiveApproach: body.minimInvasiveApproach?.trim() ?? null,
+
+    // F7
+    complicationsIntroText: body.complicationsIntroText?.trim() ?? null,
+
+    // F8
+    summary: body.summary?.trim() ?? null,
+  };
 }
 
 /**
- * Prepara y sincroniza en lote todos los datos y relaciones necesarias para
- * la creación o actualización de un caso clínico en Prisma, eliminando duplicación entre POST y PUT.
+ * Sincroniza (delete-many + create) todas las tablas hijas de un caso.
+ * Se usa tanto en POST (create) como en PUT (update).
  */
-export async function prepareCasePayload(body: CasePayloadData) {
+export async function syncCaseChildren(
+  caseId: string,
+  body: CasePayloadData
+): Promise<void> {
   const {
-    title,
-    consultationReason,
-    clinicalHistory,
-    hasVideo = false,
-    videoDescription,
-    videoUrl,
-    isPhysicalExamInteractive = true,
-    physicalExamZone,
-    physicalExamRefPoint,
-    physicalExamStandard,
-    painLevel,
-    treatmentQuestion,
-    treatmentRaw,
-    structuredTreatments,
-    clinicalSummary,
-    epidemiology,
-    complications,
-    customFields = [],
-    keywords = [],
+    altReasons = [],
+    examFindings = [],
     studies = [],
+    diagnoses = [],
+    surgicalSteps = [],
+    complications = [],
+    additionalFields = [],
   } = body;
 
-  let parsedTreatments: TreatmentOptionParsed[] = [];
-  let effectiveTreatmentRaw = treatmentRaw?.trim() || null;
+  await prisma.$transaction([
+    // F1 - Motivos alternativos
+    prisma.caseAltReason.deleteMany({ where: { caseId } }),
+    ...altReasons.map((r) =>
+      prisma.caseAltReason.create({ data: { caseId, itemId: r.itemId } })
+    ),
 
-  if (structuredTreatments && structuredTreatments.length > 0) {
-    parsedTreatments = structuredTreatments.map((t, idx) => ({
-      description: t.description?.trim() || "",
-      isCorrect: Boolean(t.isCorrect),
-      feedback: t.feedback?.trim() || null,
-      order: idx + 1,
-    })).filter(t => Boolean(t.description));
+    // F3 - Hallazgos del examen físico
+    prisma.caseExamFinding.deleteMany({ where: { caseId } }),
+    ...examFindings.map((f, idx) =>
+      prisma.caseExamFinding.create({
+        data: {
+          caseId,
+          puntoAnatomicoId: f.puntoAnatomicoId ?? null,
+          hallazgo: f.hallazgo.trim(),
+          nivelRespuestaId: f.nivelRespuestaId ?? null,
+          order: f.order ?? idx,
+        },
+      })
+    ),
 
-    if (!effectiveTreatmentRaw) {
-      effectiveTreatmentRaw = parsedTreatments
-        .map((t) => `- ${t.description}${t.isCorrect ? " [CORRECTA]" : ""}${t.feedback ? ` | Feedback: ${t.feedback}` : ""}`)
-        .join("\n");
-    }
-  } else {
-    parsedTreatments = parseTreatmentRaw(treatmentRaw);
-  }
+    // F4 - Estudios (solo recreamos hallazgos/performed; imágenes se manejan por endpoint propio)
+    prisma.caseStudyItem.deleteMany({ where: { caseId } }),
+    ...studies.map((s) =>
+      prisma.caseStudyItem.create({
+        data: {
+          caseId,
+          studyTypeId: s.studyTypeId,
+          performed: Boolean(s.performed),
+          findingsText: s.findingsText?.trim() ?? null,
+        },
+      })
+    ),
 
-  const [keywordRecords, validStudies] = await Promise.all([
-    syncKeywords(keywords),
-    syncStudies(studies),
-  ]);
+    // F5 - Diagnósticos diferenciales
+    prisma.caseDiagnosis.deleteMany({ where: { caseId } }),
+    ...diagnoses.map((d) =>
+      prisma.caseDiagnosis.create({
+        data: {
+          caseId,
+          itemId: d.itemId,
+          order: d.order,
+          isCorrect: Boolean(d.isCorrect),
+        },
+      })
+    ),
 
-  const seenCustomFieldKeys = new Set<string>();
-  const sanitizedCustomFields = Array.isArray(customFields)
-    ? customFields
-        .filter((f) => f && (Boolean(f.label?.trim()) || Boolean(f.value?.trim()) || Boolean(f.imageUrl)))
-        .map((f, idx) => {
-          const trimmedLabel = f.label?.trim() || "Campo Adicional";
-          const phaseKey = `${f.phase ?? 1}-${trimmedLabel.toLowerCase()}`;
-          if (seenCustomFieldKeys.has(phaseKey)) return null;
-          seenCustomFieldKeys.add(phaseKey);
+    // F6 - Pasos quirúrgicos
+    prisma.caseSurgicalStep.deleteMany({ where: { caseId } }),
+    ...surgicalSteps.map((s) =>
+      prisma.caseSurgicalStep.create({
+        data: { caseId, order: s.order, text: s.text.trim() },
+      })
+    ),
 
-          return {
-            id: f.id || `cf-${Date.now()}-${idx}`,
-            phase: f.phase ?? 1,
-            label: trimmedLabel,
-            type: f.type === "image" ? ("image" as const) : ("text" as const),
-            value: f.value?.trim() || "",
-            imageUrl: f.imageUrl || null,
-            imageName: f.imageName || null,
-          };
+    // F7 - Complicaciones
+    prisma.caseComplication.deleteMany({ where: { caseId } }),
+    ...complications.map((c) =>
+      prisma.caseComplication.create({
+        data: { caseId, itemId: c.itemId, note: c.note?.trim() ?? null },
+      })
+    ),
+
+    // Campos adicionales (fases 2 y 3)
+    prisma.caseAdditionalField.deleteMany({ where: { caseId } }),
+    ...additionalFields
+      .filter((f) => f.value?.trim())
+      .map((f) =>
+        prisma.caseAdditionalField.create({
+          data: {
+            caseId,
+            phase: f.phase,
+            fieldId: f.fieldId,
+            value: f.value.trim(),
+          },
         })
-        .filter((f): f is NonNullable<typeof f> => f !== null)
-    : [];
-
-  const baseData = {
-    title: title.trim(),
-    consultationReason: consultationReason?.trim() || null,
-    clinicalHistory: clinicalHistory.trim(),
-    hasVideo: Boolean(hasVideo),
-    videoDescription: videoDescription?.trim() || null,
-    videoUrl: videoUrl?.trim() || null,
-    isPhysicalExamInteractive: Boolean(isPhysicalExamInteractive),
-    physicalExamZone: physicalExamZone?.trim() || null,
-    physicalExamRefPoint: physicalExamRefPoint?.trim() || null,
-    physicalExamStandard: physicalExamStandard?.trim() || null,
-    painLevel: painLevel.trim(),
-    treatmentQuestion: treatmentQuestion?.trim() || null,
-    treatmentRaw: effectiveTreatmentRaw,
-    clinicalSummary: clinicalSummary?.trim() || null,
-    epidemiology: epidemiology?.trim() || null,
-    complications: complications?.trim() || null,
-    customFields: sanitizedCustomFields,
-  };
-
-  const keywordsCreate = keywordRecords.map((kw) => ({
-    keywordId: kw.id,
-  }));
-
-  const studiesCreate = validStudies.map((s) => ({
-    studyCatalogId: s.studyCatalogId,
-    isAdequate: s.isAdequate,
-    findings: s.findings,
-    imageUrl: s.imageUrl,
-    imageName: s.imageName,
-  }));
-
-  const treatmentOptionsCreate = parsedTreatments;
-
-  return {
-    baseData,
-    keywordsCreate,
-    studiesCreate,
-    treatmentOptionsCreate,
-  };
+      ),
+  ]);
 }

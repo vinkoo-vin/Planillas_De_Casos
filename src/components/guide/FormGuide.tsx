@@ -274,7 +274,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                         </p>
 
                         <div className="guide-callout-info text-xs p-3 rounded-xl flex items-start gap-2.5">
-                          <span className="font-bold text-teal-text shrink-0">💡 Consejo Experto:</span>
+                          <span className="font-bold text-teal-text shrink-0">Consejo Experto:</span>
                           <span>{f.tips}</span>
                         </div>
 
@@ -576,7 +576,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                       </div>
                       {t.feedback && (
                         <div className="guide-callout-info text-xs p-2.5 rounded-lg flex items-start gap-2">
-                          <span className="font-bold text-teal-text shrink-0">💡 Feedback Docente:</span>
+                          <span className="font-bold text-teal-text shrink-0">Feedback Docente:</span>
                           <span className="text-text-body">{t.feedback}</span>
                         </div>
                       )}
@@ -630,7 +630,11 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
                         Complicaciones Principales
                       </div>
                       <p className="text-xs leading-relaxed text-text-body">
-                        {activeExample.draft.complications}
+                        {typeof activeExample.draft.complications === "string"
+                          ? activeExample.draft.complications
+                          : Array.isArray(activeExample.draft.complications)
+                          ? activeExample.draft.complications.map((c) => c.itemName || c.note).filter(Boolean).join(", ")
+                          : ""}
                       </p>
                     </div>
                   )}
@@ -656,7 +660,6 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
 
             <div className="guide-callout-info p-4 rounded-2xl text-xs flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-base">🎯</span>
                 <span className="text-text-body">
                   <strong>Eje Pedagógico:</strong> {activeExample.pedagogicalKey}
                 </span>

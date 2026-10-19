@@ -98,7 +98,6 @@ export function ThemeSwitcher() {
           {/* ENCABEZADO DEL MENÚ */}
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-border-subtle px-1">
             <div className="flex items-center gap-2">
-              <span className="text-base">🎨</span>
               <span className="text-xs font-bold text-text-main uppercase tracking-wider">
                 Paleta de Temas
               </span>

@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import {
   validateCaseInput,
-  prepareCasePayload,
+  prepareCaseBaseData,
+  syncCaseChildren,
   caseDetailIncludes,
+  caseListSelect,
+  type CasePayloadData,
 } from "@/lib/case-service";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +15,9 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const id = searchParams.get("id");
-    const search = searchParams.get("search")?.trim();
     const isFull = searchParams.get("full") === "true";
 
-    // 1. Consulta de caso individual completo por ID (para el Modal de Ficha Clínica)
+    // ── Caso individual por ID ──────────────────────────────
     if (id) {
       const singleCase = await prisma.case.findUnique({
         where: { id },
@@ -39,70 +41,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 2. Filtro de búsqueda opcional
-    const whereClause = search
-      ? {
-          OR: [
-            { title: { contains: search, mode: "insensitive" as const } },
-            { clinicalHistory: { contains: search, mode: "insensitive" as const } },
-            { keywords: { some: { keyword: { name: { contains: search, mode: "insensitive" as const } } } } },
-          ],
-        }
-      : undefined;
-
-    // 3. Consulta para la lista de casos
+    // ── Lista de casos ──────────────────────────────────────
     const cases = isFull
       ? await prisma.case.findMany({
-          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
           include: caseDetailIncludes,
         })
       : await prisma.case.findMany({
-          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
-          select: {
-            id: true,
-            title: true,
-            consultationReason: true,
-            clinicalHistory: true,
-            hasVideo: true,
-            isPhysicalExamInteractive: true,
-            painLevel: true,
-            treatmentQuestion: true,
-            clinicalSummary: true,
-            epidemiology: true,
-            complications: true,
-            customFields: true,
-            status: true,
-            createdAt: true,
-            keywords: {
-              select: {
-                keyword: {
-                  select: { name: true },
-                },
-              },
-            },
-            studies: {
-              select: {
-                id: true,
-                isAdequate: true,
-                studyCatalog: {
-                  select: { name: true },
-                },
-              },
-            },
-            treatmentOptions: {
-              select: {
-                id: true,
-                description: true,
-                isCorrect: true,
-                order: true,
-              },
-              orderBy: { order: "asc" },
-            },
-          },
+          select: caseListSelect,
         });
 
     return NextResponse.json({
@@ -124,23 +73,25 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body: CasePayloadData = await req.json();
 
-    const validation = validateCaseInput(body);
+    const validation = validateCaseInput(body as Record<string, unknown>);
     if (!validation.isValid) {
-      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
     }
 
-    const { baseData, keywordsCreate, studiesCreate, treatmentOptionsCreate } =
-      await prepareCasePayload(body);
+    const baseData = prepareCaseBaseData(body);
 
-    const fullCase = await prisma.case.create({
-      data: {
-        ...baseData,
-        keywords: { create: keywordsCreate },
-        studies: { create: studiesCreate },
-        treatmentOptions: { create: treatmentOptionsCreate },
-      },
+    // Crear el caso base primero, luego las relaciones hijas
+    const newCase = await prisma.case.create({ data: baseData });
+    await syncCaseChildren(newCase.id, body);
+
+    // Retornar el caso completo con relaciones
+    const fullCase = await prisma.case.findUnique({
+      where: { id: newCase.id },
       include: caseDetailIncludes,
     });
 
@@ -156,7 +107,7 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
+    const body: CasePayloadData & { id: string } = await req.json();
     const { id } = body;
 
     if (!id) {
@@ -166,9 +117,12 @@ export async function PUT(req: Request) {
       );
     }
 
-    const validation = validateCaseInput(body);
+    const validation = validateCaseInput(body as unknown as Record<string, unknown>);
     if (!validation.isValid) {
-      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
     }
 
     const existingCase = await prisma.case.findUnique({
@@ -183,27 +137,14 @@ export async function PUT(req: Request) {
       );
     }
 
-    const { baseData, keywordsCreate, studiesCreate, treatmentOptionsCreate } =
-      await prepareCasePayload(body);
+    const baseData = prepareCaseBaseData(body);
 
-    // Actualización atómica del caso y sincronización de relaciones hijas
-    const updatedCase = await prisma.case.update({
+    // Actualizar base y sincronizar relaciones hijas
+    await prisma.case.update({ where: { id }, data: baseData });
+    await syncCaseChildren(id, body);
+
+    const updatedCase = await prisma.case.findUnique({
       where: { id },
-      data: {
-        ...baseData,
-        keywords: {
-          deleteMany: {},
-          create: keywordsCreate,
-        },
-        studies: {
-          deleteMany: {},
-          create: studiesCreate,
-        },
-        treatmentOptions: {
-          deleteMany: {},
-          create: treatmentOptionsCreate,
-        },
-      },
       include: caseDetailIncludes,
     });
 
@@ -233,7 +174,7 @@ export async function DELETE(req: NextRequest) {
           id = body.id;
         }
       } catch {
-        // Body was empty or not valid JSON
+        // Body vacío o no es JSON válido
       }
     }
 
@@ -246,7 +187,7 @@ export async function DELETE(req: NextRequest) {
 
     const existingCase = await prisma.case.findUnique({
       where: { id },
-      select: { id: true, title: true },
+      select: { id: true, principalReason: { select: { name: true } } },
     });
 
     if (!existingCase) {
@@ -256,14 +197,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Eliminación en cascada de relaciones hijas configuradas en schema.prisma
-    await prisma.case.delete({
-      where: { id },
-    });
+    // Eliminación en cascada configurada en el schema
+    await prisma.case.delete({ where: { id } });
 
     return NextResponse.json({
       success: true,
-      message: `El caso clínico "${existingCase.title}" fue eliminado exitosamente`,
+      message: `El caso clínico fue eliminado exitosamente`,
       id,
     });
   } catch (error) {
@@ -278,4 +217,3 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
-
