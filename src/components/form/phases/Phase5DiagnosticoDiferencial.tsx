@@ -67,7 +67,7 @@ export const Phase5DiagnosticoDiferencial = React.memo(function Phase5Diagnostic
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 5: Diagnóstico Diferencial
+              Diagnóstico Diferencial
             </h2>
             <p className="text-xs text-text-muted">
               Configure hasta 5 opciones diagnósticas para el simulador y señale cuál es el diagnóstico correcto.

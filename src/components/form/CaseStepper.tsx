@@ -144,13 +144,12 @@ export const CaseStepper = React.memo(function CaseStepper({
 
               {/* TÍTULO Y SUBTÍTULO */}
               <div className="stepper-tab-content min-w-0 flex-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-1">
-                  <span className="text-[10px] font-bold text-teal-text">F{p.number}</span>
-                  <span className="stepper-tab-title font-bold text-xs truncate block text-text-main">
+                <div className="flex items-center justify-center sm:justify-start">
+                  <span className="stepper-tab-title font-bold text-xs leading-snug text-text-main block">
                     {p.title}
                   </span>
                 </div>
-                <span className="stepper-tab-desc text-[10px] text-text-muted truncate hidden sm:block">
+                <span className="stepper-tab-desc text-[10px] text-text-muted leading-tight mt-0.5 hidden sm:block">
                   {p.subtitle}
                 </span>
               </div>

@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-export type ActiveTab = "form" | "list" | "guide";
+export type ActiveTab = "form" | "list" | "guide" | "detail";
 
 interface TopbarProps {
   activeTab: ActiveTab;
@@ -76,6 +76,20 @@ export function Topbar({ activeTab, onTabChange, savedCasesCount }: TopbarProps)
                 {savedCasesCount}
               </span>
             </button>
+
+            {activeTab === "detail" && (
+              <button
+                type="button"
+                className="nav-segmented-btn inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap active shadow-sm"
+                onClick={() => handleSelectTab("detail")}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                Ficha del Caso
+              </button>
+            )}
 
             <button
               type="button"

@@ -50,7 +50,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 2: Signos, Síntomas y Anamnesis
+              Signos y Síntomas
             </h2>
             <p className="text-xs text-text-muted">
               Detalle la cronología del cuadro clínico, características del síntoma y recursos audiovisuales asociados.
@@ -84,7 +84,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
         )}
       </div>
 
-      {/* 2.2 RECURSO AUDIOVISUAL / VIDEO */}
+      {/* 2.2 RECURSO AUDIOVISUAL / GENERACIÓN DE VIDEO CLÍNICO */}
       <div className="p-5 rounded-2xl bg-card-bg border border-border-subtle space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -92,7 +92,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               ¿El caso incluye recurso audiovisual o video para el simulador?
             </label>
             <p className="text-xs text-text-muted mt-0.5">
-              Active esta opción si el caso cuenta con un video clínico (ej. vómito en proyectil, onda peristáltica).
+              Active esta opción para definir sugerencias o directivas para la posterior generación del video clínico del caso.
             </p>
           </div>
 
@@ -101,28 +101,138 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               type="checkbox"
               className="sr-only peer"
               checked={Boolean(data.hasVideo)}
-              onChange={(e) => updateField("hasVideo", e.target.checked)}
+              onChange={(e) => {
+                const nextChecked = e.target.checked;
+                updateField("hasVideo", nextChecked);
+                if (nextChecked && (!data.videoUrl || data.videoUrl.trim() === "")) {
+                  updateField("videoUrl", "Sin preferencia específica (generar acorde a los signos y síntomas)");
+                }
+              }}
             />
             <div className="w-11 h-6 bg-surface-subtle peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal border border-border-subtle"></div>
           </label>
         </div>
 
         {data.hasVideo && (
-          <div className="pt-3 border-t border-border-subtle space-y-2 animate-fadeIn">
-            <label htmlFor="videoUrl" className="text-xs font-bold text-text-main block">
-              URL o Enlace del Video Clínico:
-            </label>
-            <input
-              id="videoUrl"
-              type="url"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm border border-border-subtle bg-surface text-text-main focus:outline-none focus:ring-2 focus:ring-teal"
-              placeholder="https://..."
-              value={data.videoUrl || ""}
-              onChange={(e) => updateField("videoUrl", e.target.value)}
-            />
-            <p className="text-[11px] text-text-muted">
-              Puede ser un enlace a YouTube, Vimeo, Google Drive institucional o repositorio de video.
-            </p>
+          <div className="pt-4 border-t border-border-subtle space-y-4 animate-fadeIn">
+            <div>
+              <span className="text-xs font-bold text-text-main block mb-1">
+                Preferencia de Generación del Video:
+              </span>
+              <p className="text-xs text-text-muted">
+                Seleccione si tiene requerimientos específicos de toma, postura o escena, o si prefiere que se genere automáticamente.
+              </p>
+            </div>
+
+            {/* SELECTOR DE OPCIONES: TENGO UNA PREFERENCIA VS NO TENGO PREFERENCIA */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* OPCIÓN 1: TENGO UNA PREFERENCIA */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (data.videoUrl?.startsWith("Sin preferencia")) {
+                    updateField("videoUrl", "");
+                  }
+                }}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                  data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia")
+                    ? "bg-teal/10 border-teal shadow-xs text-text-main"
+                    : "bg-surface-subtle border-border-subtle text-text-muted hover:border-teal/40 hover:text-text-main"
+                }`}
+              >
+                <div className="pt-0.5">
+                  <span
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia")
+                        ? "border-teal bg-teal"
+                        : "border-border-subtle bg-surface"
+                    }`}
+                  >
+                    {data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia") && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
+                  </span>
+                </div>
+                <div>
+                  <strong className="text-xs font-bold block text-text-main">
+                    Tengo una preferencia
+                  </strong>
+                  <span className="text-[11px] leading-snug block text-text-muted mt-0.5">
+                    Deseo redactar sugerencias o indicaciones clínicas para la producción del video.
+                  </span>
+                </div>
+              </button>
+
+              {/* OPCIÓN 2: NO TENGO PREFERENCIA */}
+              <button
+                type="button"
+                onClick={() => {
+                  updateField(
+                    "videoUrl",
+                    "Sin preferencia específica (generar acorde a los signos y síntomas)"
+                  );
+                }}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                  data.videoUrl?.startsWith("Sin preferencia")
+                    ? "bg-teal/10 border-teal shadow-xs text-text-main"
+                    : "bg-surface-subtle border-border-subtle text-text-muted hover:border-teal/40 hover:text-text-main"
+                }`}
+              >
+                <div className="pt-0.5">
+                  <span
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      data.videoUrl?.startsWith("Sin preferencia")
+                        ? "border-teal bg-teal"
+                        : "border-border-subtle bg-surface"
+                    }`}
+                  >
+                    {data.videoUrl?.startsWith("Sin preferencia") && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
+                  </span>
+                </div>
+                <div>
+                  <strong className="text-xs font-bold block text-text-main">
+                    No tengo preferencia
+                  </strong>
+                  <span className="text-[11px] leading-snug block text-text-muted mt-0.5">
+                    Generación estándar acorde al cuadro clínico y signos descritos en el caso.
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {/* ÁREA DE TEXTO CUANDO TIENE PREFERENCIA */}
+            {data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia") ? (
+              <div className="p-4 rounded-xl bg-surface border border-teal-border/40 space-y-2 animate-fadeIn">
+                <label htmlFor="videoSuggestions" className="text-xs font-bold text-text-main flex items-center gap-2">
+                  <span>Sugerencias e Indicaciones para el Video:</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-light text-teal">
+                    Prompt de Generación
+                  </span>
+                </label>
+                <textarea
+                  id="videoSuggestions"
+                  rows={4}
+                  className="w-full p-3.5 rounded-xl text-sm border border-border-subtle bg-card-bg text-text-main focus:outline-none focus:ring-2 focus:ring-teal resize-y"
+                  placeholder="Ej: Video en plano detalle del abdomen del lactante en decúbito supino, mostrando ondas peristálticas gástricas visibles de izquierda a derecha antes de la toma de leche, facies de dolor o quejido..."
+                  value={data.videoUrl || ""}
+                  onChange={(e) => updateField("videoUrl", e.target.value)}
+                />
+                <p className="text-[11px] text-text-muted">
+                  Describa encuadre, síntomas visibles en movimiento, duración sugerida o cualquier especificación para el generador o equipo de video.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-surface border border-border-subtle text-xs text-text-muted flex items-center gap-2.5 animate-fadeIn">
+                <span className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold">
+                  ✓
+                </span>
+                <span>
+                  <strong>Modo automático:</strong> El video clínico se generará automáticamente tomando como base los datos de anamnesis, historia clínica y hallazgos registrados.
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -132,7 +242,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <label className="text-sm font-bold text-text-main block">
-              Campos Adicionales de la Fase 2 (Opcional)
+              Campos Adicionales (Opcional)
             </label>
             <p className="text-xs text-text-muted mt-0.5">
               Agregue información específica no cubierta por los campos estándar utilizando el catálogo de campos.

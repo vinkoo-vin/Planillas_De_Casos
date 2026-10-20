@@ -26,7 +26,7 @@ export const Phase8Resumen = React.memo(function Phase8Resumen({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 8: Resumen del Caso y Conclusiones Docentes
+              Resumen del Caso y Conclusiones Docentes
             </h2>
             <p className="text-xs text-text-muted">
               Redacte la discusión clínica, perlas formativas y seleccione el estado final de este caso.

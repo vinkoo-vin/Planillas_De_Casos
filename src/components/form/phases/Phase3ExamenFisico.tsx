@@ -75,7 +75,7 @@ export const Phase3ExamenFisico = React.memo(function Phase3ExamenFisico({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 3: Exploración y Examen Físico
+              Examen Físico
             </h2>
             <p className="text-xs text-text-muted">
               Configure la exploración física mediante puntos anatómicos 3D interactivos o relato narrativo clásico.
@@ -265,7 +265,7 @@ export const Phase3ExamenFisico = React.memo(function Phase3ExamenFisico({
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <label className="text-sm font-bold text-text-main block">
-              Campos Adicionales de la Fase 3 (Opcional)
+              Campos Adicionales (Opcional)
             </label>
             <p className="text-xs text-text-muted mt-0.5">
               Agregue datos complementarios del examen físico como Glasgow, escala analógica o monitoreo.

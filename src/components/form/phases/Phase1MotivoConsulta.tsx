@@ -28,7 +28,7 @@ export const Phase1MotivoConsulta = React.memo(function Phase1MotivoConsulta({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 1: Identificación y Motivo de Consulta
+              Motivo de Consulta
             </h2>
             <p className="text-xs text-text-muted">
               Configure el diagnóstico definitivo del caso y defina cómo se presenta inicialmente al alumno.

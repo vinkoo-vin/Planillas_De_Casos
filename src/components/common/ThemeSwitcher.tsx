@@ -5,7 +5,11 @@ import { THEMES, ThemeKey } from "@/types/clinical";
 import { CloseIcon, CheckIcon } from "@/components/common/Icons";
 
 
-export function ThemeSwitcher() {
+interface ThemeSwitcherProps {
+  variant?: "floating" | "inline";
+}
+
+export function ThemeSwitcher({ variant = "floating" }: ThemeSwitcherProps) {
   const [currentTheme, setCurrentTheme] = useState<ThemeKey>("teal");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,13 +88,19 @@ export function ThemeSwitcher() {
   );
 
   const activeThemeObj = THEMES.find((t) => t.id === currentTheme) || THEMES[0];
+  const isInline = variant === "inline";
 
   return (
-    <div ref={containerRef} className="fixed bottom-6 right-6 z-40 select-none">
+    <div
+      ref={containerRef}
+      className={isInline ? "relative inline-block select-none" : "fixed bottom-6 right-6 z-40 select-none"}
+    >
       {/* MENÚ POPOVER DESPLEGABLE */}
       {isOpen && (
         <div
-          className="absolute bottom-16 right-0 mb-2 w-64 p-3 rounded-2xl bg-card-bg border border-card-border shadow-2xl animate-scaleUp backdrop-blur-xl"
+          className={`absolute ${
+            isInline ? "top-full right-0 mt-2" : "bottom-16 right-0 mb-2"
+          } w-64 p-3 rounded-2xl bg-card-bg border border-card-border shadow-2xl animate-scaleUp backdrop-blur-xl z-50`}
           role="dialog"
           aria-modal="true"
           aria-label="Paleta de temas visuales"
@@ -156,65 +166,88 @@ export function ThemeSwitcher() {
         </div>
       )}
 
-      {/* BOTÓN FLOTANTE EN FORMA DE TABLA DE PINTURA (SIN LA BROCHA) */}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="group relative w-14 h-14 rounded-2xl flex items-center justify-center bg-card-bg border border-card-border shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer backdrop-blur-md"
-        title="Cambiar paleta de colores / Tema visual"
-        aria-label="Abrir selector de paleta de colores"
-        aria-expanded={isOpen}
-      >
-        {/* SVG TABLA DE PINTURAS ARTISTA (MADERA CON ÓLEOS DE COLORES Y HUECO DE PULGAR, SIN BROCHA) */}
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 48 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="transition-transform duration-300 group-hover:rotate-12"
+      {/* BOTÓN SELECTOR DE TEMA */}
+      {isInline ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-input-border bg-card-bg hover:bg-surface-subtle transition-all cursor-pointer text-xs font-semibold text-text-muted hover:text-text-main shadow-xs"
+          title={`Tema actual: ${activeThemeObj.name}. Clic para cambiar`}
+          aria-label="Cambiar tema visual"
+          aria-expanded={isOpen}
         >
-          {/* Cuerpo ovalado de la tabla de pinturas con gradiente de madera */}
-          <path
-            d="M24 4C12.95 4 4 12.95 4 24c0 6.6 3.2 12.5 8.2 16.1 1.2.9 2.9.4 3.5-.9l1.4-2.8c.8-1.5 2.4-2.4 4.1-2.4h3.8c7.7 0 14-6.3 14-14C43 11.2 34.5 4 24 4z"
-            fill="url(#paletteWoodGradient)"
-            stroke="#A8733E"
-            strokeWidth="1.6"
-          />
-          {/* Orificio para el pulgar de la paleta */}
-          <ellipse
-            cx="32"
-            cy="27"
-            rx="3.6"
-            ry="4.6"
-            fill="var(--card-bg, #ffffff)"
-            stroke="#A8733E"
-            strokeWidth="1.4"
-          />
-          {/* Manchas de pintura al óleo perimetrales */}
-          <circle cx="12.5" cy="20" r="3.2" fill="#EF4444" stroke="#DC2626" strokeWidth="0.5" />
-          <circle cx="15.5" cy="12.5" r="3.2" fill="#F97316" stroke="#EA580C" strokeWidth="0.5" />
-          <circle cx="23.5" cy="9" r="3.2" fill="#FBBF24" stroke="#D97706" strokeWidth="0.5" />
-          <circle cx="31.5" cy="12" r="3.2" fill="#10B981" stroke="#059669" strokeWidth="0.5" />
-          <circle cx="37" cy="18.5" r="3" fill="#06B6D4" stroke="#0891B2" strokeWidth="0.5" />
-          <circle cx="21" cy="28.5" r="2.8" fill="#8B5CF6" stroke="#7C3AED" strokeWidth="0.5" />
-          <circle cx="15" cy="27" r="2.8" fill="#EC4899" stroke="#DB2777" strokeWidth="0.5" />
-          <defs>
-            <linearGradient id="paletteWoodGradient" x1="4" y1="4" x2="43" y2="40" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#F5D0A1" />
-              <stop offset="0.5" stopColor="#E2B27B" />
-              <stop offset="1" stopColor="#C68B4C" />
-            </linearGradient>
-          </defs>
-        </svg>
+          <span className="inline-flex items-center gap-1">
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block shadow-xs"
+              style={{ background: activeThemeObj.dotPrimary }}
+            />
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block shadow-xs"
+              style={{ background: activeThemeObj.dotSecondary }}
+            />
+          </span>
+          <span className="hidden sm:inline text-xs">{activeThemeObj.label}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-text-muted">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="group relative w-14 h-14 rounded-2xl flex items-center justify-center bg-card-bg border border-card-border shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer backdrop-blur-md"
+          title="Cambiar paleta de colores / Tema visual"
+          aria-label="Abrir selector de paleta de colores"
+          aria-expanded={isOpen}
+        >
+          {/* SVG TABLA DE PINTURAS ARTISTA */}
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="transition-transform duration-300 group-hover:rotate-12"
+          >
+            <path
+              d="M24 4C12.95 4 4 12.95 4 24c0 6.6 3.2 12.5 8.2 16.1 1.2.9 2.9.4 3.5-.9l1.4-2.8c.8-1.5 2.4-2.4 4.1-2.4h3.8c7.7 0 14-6.3 14-14C43 11.2 34.5 4 24 4z"
+              fill="url(#paletteWoodGradient)"
+              stroke="#A8733E"
+              strokeWidth="1.6"
+            />
+            <ellipse
+              cx="32"
+              cy="27"
+              rx="3.6"
+              ry="4.6"
+              fill="var(--card-bg, #ffffff)"
+              stroke="#A8733E"
+              strokeWidth="1.4"
+            />
+            <circle cx="12.5" cy="20" r="3.2" fill="#EF4444" stroke="#DC2626" strokeWidth="0.5" />
+            <circle cx="15.5" cy="12.5" r="3.2" fill="#F97316" stroke="#EA580C" strokeWidth="0.5" />
+            <circle cx="23.5" cy="9" r="3.2" fill="#FBBF24" stroke="#D97706" strokeWidth="0.5" />
+            <circle cx="31.5" cy="12" r="3.2" fill="#10B981" stroke="#059669" strokeWidth="0.5" />
+            <circle cx="37" cy="18.5" r="3" fill="#06B6D4" stroke="#0891B2" strokeWidth="0.5" />
+            <circle cx="21" cy="28.5" r="2.8" fill="#8B5CF6" stroke="#7C3AED" strokeWidth="0.5" />
+            <circle cx="15" cy="27" r="2.8" fill="#EC4899" stroke="#DB2777" strokeWidth="0.5" />
+            <defs>
+              <linearGradient id="paletteWoodGradient" x1="4" y1="4" x2="43" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#F5D0A1" />
+                <stop offset="0.5" stopColor="#E2B27B" />
+                <stop offset="1" stopColor="#C68B4C" />
+              </linearGradient>
+            </defs>
+          </svg>
 
-        {/* INDICADOR DEL TEMA ACTUAL ACTIVO */}
-        <span
-          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-card-bg shadow-sm"
-          style={{ background: activeThemeObj.dotPrimary }}
-          title={`Tema activo: ${activeThemeObj.name}`}
-        />
-      </button>
+          {/* INDICADOR DEL TEMA ACTUAL ACTIVO */}
+          <span
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-card-bg shadow-sm"
+            style={{ background: activeThemeObj.dotPrimary }}
+            title={`Tema activo: ${activeThemeObj.name}`}
+          />
+        </button>
+      )}
     </div>
   );
 }

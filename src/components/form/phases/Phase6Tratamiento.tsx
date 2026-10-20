@@ -65,7 +65,7 @@ export const Phase6Tratamiento = React.memo(function Phase6Tratamiento({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 6: Tratamiento y Resolución Quirúrgica
+              Tratamiento y Resolución Quirúrgica
             </h2>
             <p className="text-xs text-text-muted">
               Defina las indicaciones médicas pre/post y, si corresponde, el protocolo quirúrgico con sus principios técnicos.

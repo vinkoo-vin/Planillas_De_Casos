@@ -29,13 +29,13 @@ interface CaseFormProps {
 }
 
 const NEXT_PHASE_LABELS: Record<number, string> = {
-  1: "Continuar a Fase 2: Signos y Síntomas",
-  2: "Continuar a Fase 3: Examen Físico",
-  3: "Continuar a Fase 4: Estudios",
-  4: "Continuar a Fase 5: Diagnóstico Diferencial",
-  5: "Continuar a Fase 6: Tratamiento",
-  6: "Continuar a Fase 7: Complicaciones",
-  7: "Continuar a Fase 8: Resumen del Caso",
+  1: "Continuar a Signos y Síntomas",
+  2: "Continuar a Examen Físico",
+  3: "Continuar a Estudios",
+  4: "Continuar a Diagnóstico Diferencial",
+  5: "Continuar a Tratamiento",
+  6: "Continuar a Complicaciones",
+  7: "Continuar a Resumen del Caso",
 };
 
 export const CaseForm = React.memo(function CaseForm({

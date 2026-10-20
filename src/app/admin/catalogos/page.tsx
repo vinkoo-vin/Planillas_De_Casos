@@ -288,7 +288,7 @@ export default function CatalogosAdminPage() {
               </svg>
               Volver al Formulario
             </Link>
-            <ThemeSwitcher />
+            <ThemeSwitcher variant="inline" />
           </div>
         </div>
       </header>

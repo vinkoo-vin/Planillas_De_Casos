@@ -38,8 +38,7 @@ export async function GET() {
       },
       {
         headers: {
-          // Permite responder desde caché rápida y revalidar en segundo plano para evitar saturar la BD
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       }
     );

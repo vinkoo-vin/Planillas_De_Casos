@@ -56,7 +56,7 @@ export const Phase7Complicaciones = React.memo(function Phase7Complicaciones({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 7: Complicaciones Posibles y Riesgos
+              Complicaciones Posibles y Riesgos
             </h2>
             <p className="text-xs text-text-muted">
               Documente las complicaciones potenciales pre, intra y postoperatorias, con notas formativas para el alumno.

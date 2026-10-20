@@ -70,7 +70,7 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
           </span>
           <div>
             <h2 className="text-lg font-extrabold text-text-main">
-              Fase 4: Estudios Complementarios e Imágenes
+              Estudios Complementarios
             </h2>
             <p className="text-xs text-text-muted">
               Configure qué estudios se solicitaron en este caso, cuáles arrojaron resultados y sus hallazgos médicos.
