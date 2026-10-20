@@ -2,14 +2,21 @@
 
 import React from "react";
 import { CatalogType } from "@prisma/client";
-import { CaseDraft, FormErrorMap, AdditionalFieldDraft } from "@/types/clinical";
+import {
+  CaseDraft,
+  FormErrorMap,
+  AdditionalFieldDraft,
+} from "@/types/clinical";
 import { SelectorCatalogo } from "@/components/common/SelectorCatalogo";
 import { TrashIcon } from "@/components/common/Icons";
 
 interface Phase2SignosSintomasProps {
   data: CaseDraft;
   errors: FormErrorMap;
-  updateField: <K extends keyof CaseDraft>(field: K, value: CaseDraft[K] | ((prev: CaseDraft[K]) => CaseDraft[K])) => void;
+  updateField: <K extends keyof CaseDraft>(
+    field: K,
+    value: CaseDraft[K] | ((prev: CaseDraft[K]) => CaseDraft[K]),
+  ) => void;
 }
 
 export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
@@ -17,11 +24,16 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
   errors,
   updateField,
 }: Phase2SignosSintomasProps) {
-  const phase2Fields = (data.additionalFields || []).filter((f) => f.phase === 2);
+  const phase2Fields = (data.additionalFields || []).filter(
+    (f) => f.phase === 2,
+  );
 
   const handleAddAdditionalField = () => {
     const newField: AdditionalFieldDraft = {
-      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `f2-${Date.now()}`,
+      id:
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `f2-${Date.now()}`,
       phase: 2,
       fieldId: "",
       fieldName: "",
@@ -30,14 +42,19 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
     updateField("additionalFields", (prev = []) => [...prev, newField]);
   };
 
-  const handleUpdateAdditionalField = (id: string, updates: Partial<AdditionalFieldDraft>) => {
+  const handleUpdateAdditionalField = (
+    id: string,
+    updates: Partial<AdditionalFieldDraft>,
+  ) => {
     updateField("additionalFields", (prev = []) =>
-      prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+      prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
     );
   };
 
   const handleRemoveAdditionalField = (id: string) => {
-    updateField("additionalFields", (prev = []) => prev.filter((f) => f.id !== id));
+    updateField("additionalFields", (prev = []) =>
+      prev.filter((f) => f.id !== id),
+    );
   };
 
   return (
@@ -53,7 +70,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               Signos y Síntomas
             </h2>
             <p className="text-xs text-text-muted">
-              Detalle la cronología del cuadro clínico, características del síntoma y recursos audiovisuales asociados.
+              Detalle la cronología del cuadro clínico, características del
+              síntoma y recursos audiovisuales asociados.
             </p>
           </div>
         </div>
@@ -62,12 +80,16 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
       {/* 2.1 TEXTO DE SIGNOS Y SÍNTOMAS */}
       <div className="p-5 rounded-2xl bg-card-bg border border-border-subtle space-y-3">
         <div>
-          <label htmlFor="signsSymptomsText" className="text-sm font-bold text-text-main flex items-center gap-2">
+          <label
+            htmlFor="signsSymptomsText"
+            className="text-sm font-bold text-text-main flex items-center gap-2"
+          >
             <span>Historia de la Enfermedad Actual y Signos Clave</span>
             <span className="text-rose-500 font-extrabold">*</span>
           </label>
           <p className="text-xs text-text-muted mt-0.5">
-            Describa el inicio, tiempo de evolución, características del vómito o síntoma, antecedentes perinatales y estado general.
+            Describa el inicio, tiempo de evolución, características de los
+            síntoma, antecedentes perinatales y estado general.
           </p>
         </div>
 
@@ -80,7 +102,9 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
           onChange={(e) => updateField("signsSymptomsText", e.target.value)}
         />
         {errors.signsSymptomsText && (
-          <p className="text-xs text-rose-500 font-semibold">{errors.signsSymptomsText}</p>
+          <p className="text-xs text-rose-500 font-semibold">
+            {errors.signsSymptomsText}
+          </p>
         )}
       </div>
 
@@ -92,7 +116,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               ¿El caso incluye recurso audiovisual o video para el simulador?
             </label>
             <p className="text-xs text-text-muted mt-0.5">
-              Active esta opción para definir sugerencias o directivas para la posterior generación del video clínico del caso.
+              Active esta opción para definir sugerencias o directivas para la
+              posterior generación del video clínico del caso.
             </p>
           </div>
 
@@ -104,8 +129,14 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               onChange={(e) => {
                 const nextChecked = e.target.checked;
                 updateField("hasVideo", nextChecked);
-                if (nextChecked && (!data.videoUrl || data.videoUrl.trim() === "")) {
-                  updateField("videoUrl", "Sin preferencia específica (generar acorde a los signos y síntomas)");
+                if (
+                  nextChecked &&
+                  (!data.videoUrl || data.videoUrl.trim() === "")
+                ) {
+                  updateField(
+                    "videoUrl",
+                    "Sin preferencia específica (generar acorde a los signos y síntomas)",
+                  );
                 }
               }}
             />
@@ -120,7 +151,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                 Preferencia de Generación del Video:
               </span>
               <p className="text-xs text-text-muted">
-                Seleccione si tiene requerimientos específicos de toma, postura o escena, o si prefiere que se genere automáticamente.
+                Seleccione si tiene requerimientos específicos de toma, postura
+                o escena, o si prefiere que se genere automáticamente.
               </p>
             </div>
 
@@ -135,7 +167,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                   }
                 }}
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
-                  data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia")
+                  data.videoUrl !== undefined &&
+                  !data.videoUrl.startsWith("Sin preferencia")
                     ? "bg-teal/10 border-teal shadow-xs text-text-main"
                     : "bg-surface-subtle border-border-subtle text-text-muted hover:border-teal/40 hover:text-text-main"
                 }`}
@@ -143,14 +176,16 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                 <div className="pt-0.5">
                   <span
                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia")
+                      data.videoUrl !== undefined &&
+                      !data.videoUrl.startsWith("Sin preferencia")
                         ? "border-teal bg-teal"
                         : "border-border-subtle bg-surface"
                     }`}
                   >
-                    {data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia") && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    )}
+                    {data.videoUrl !== undefined &&
+                      !data.videoUrl.startsWith("Sin preferencia") && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
                   </span>
                 </div>
                 <div>
@@ -158,7 +193,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                     Tengo una preferencia
                   </strong>
                   <span className="text-[11px] leading-snug block text-text-muted mt-0.5">
-                    Deseo redactar sugerencias o indicaciones clínicas para la producción del video.
+                    Deseo redactar sugerencias o indicaciones clínicas para la
+                    producción del video.
                   </span>
                 </div>
               </button>
@@ -169,7 +205,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                 onClick={() => {
                   updateField(
                     "videoUrl",
-                    "Sin preferencia específica (generar acorde a los signos y síntomas)"
+                    "Sin preferencia específica (generar acorde a los signos y síntomas)",
                   );
                 }}
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
@@ -196,16 +232,21 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                     No tengo preferencia
                   </strong>
                   <span className="text-[11px] leading-snug block text-text-muted mt-0.5">
-                    Generación estándar acorde al cuadro clínico y signos descritos en el caso.
+                    Generación estándar acorde al cuadro clínico y signos
+                    descritos en el caso.
                   </span>
                 </div>
               </button>
             </div>
 
             {/* ÁREA DE TEXTO CUANDO TIENE PREFERENCIA */}
-            {data.videoUrl !== undefined && !data.videoUrl.startsWith("Sin preferencia") ? (
+            {data.videoUrl !== undefined &&
+            !data.videoUrl.startsWith("Sin preferencia") ? (
               <div className="p-4 rounded-xl bg-surface border border-teal-border/40 space-y-2 animate-fadeIn">
-                <label htmlFor="videoSuggestions" className="text-xs font-bold text-text-main flex items-center gap-2">
+                <label
+                  htmlFor="videoSuggestions"
+                  className="text-xs font-bold text-text-main flex items-center gap-2"
+                >
                   <span>Sugerencias e Indicaciones para el Video:</span>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-light text-teal">
                     Prompt de Generación
@@ -220,7 +261,9 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                   onChange={(e) => updateField("videoUrl", e.target.value)}
                 />
                 <p className="text-[11px] text-text-muted">
-                  Describa encuadre, síntomas visibles en movimiento, duración sugerida o cualquier especificación para el generador o equipo de video.
+                  Describa encuadre, síntomas visibles en movimiento, duración
+                  sugerida o cualquier especificación para el generador o equipo
+                  de video.
                 </p>
               </div>
             ) : (
@@ -229,7 +272,9 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                   ✓
                 </span>
                 <span>
-                  <strong>Modo automático:</strong> El video clínico se generará automáticamente tomando como base los datos de anamnesis, historia clínica y hallazgos registrados.
+                  <strong>Modo automático:</strong> El video clínico se generará
+                  automáticamente tomando como base los datos de anamnesis,
+                  historia clínica y hallazgos registrados.
                 </span>
               </div>
             )}
@@ -245,7 +290,8 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
               Campos Adicionales (Opcional)
             </label>
             <p className="text-xs text-text-muted mt-0.5">
-              Agregue información específica no cubierta por los campos estándar utilizando el catálogo de campos.
+              Agregue información específica no cubierta por los campos estándar
+              utilizando el catálogo de campos.
             </p>
           </div>
 
@@ -261,7 +307,10 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
         {phase2Fields.length > 0 && (
           <div className="space-y-3 pt-2">
             {phase2Fields.map((field) => (
-              <div key={field.id} className="p-3.5 rounded-xl bg-surface border border-border-subtle space-y-2.5">
+              <div
+                key={field.id}
+                className="p-3.5 rounded-xl bg-surface border border-border-subtle space-y-2.5"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1">
                     <SelectorCatalogo
@@ -290,7 +339,11 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
                   className="w-full px-3 py-2 rounded-lg text-xs border border-border-subtle bg-card-bg text-text-main focus:outline-none focus:ring-1 focus:ring-teal"
                   placeholder="Valor del campo adicional..."
                   value={field.value}
-                  onChange={(e) => handleUpdateAdditionalField(field.id, { value: e.target.value })}
+                  onChange={(e) =>
+                    handleUpdateAdditionalField(field.id, {
+                      value: e.target.value,
+                    })
+                  }
                 />
               </div>
             ))}

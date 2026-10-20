@@ -138,14 +138,6 @@ export async function getOrCreateCatalogItem(
   const origin = options.origin ?? CatalogOrigin.caso;
   const reviewed = options.reviewed ?? (origin === CatalogOrigin.admin);
 
-  // Regla especial: tipos de estudio es lista cerrada cargada por seed
-  if (catalog === CatalogType.tipo_estudio && origin === CatalogOrigin.caso) {
-    throw new CatalogError(
-      "Los tipos de estudio corresponden a una lista cerrada y no pueden crearse desde el caso",
-      403
-    );
-  }
-
   // 1. Verificar si ya existe
   const existing = await prisma.catalogItem.findUnique({
     where: { catalog_key: { catalog, key: clave } },

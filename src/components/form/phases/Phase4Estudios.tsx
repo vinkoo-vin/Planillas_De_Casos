@@ -17,9 +17,12 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
   errors,
   updateField,
 }: Phase4EstudiosProps) {
-  const { items: studyTypes, loading } = useCatalog(CatalogType.tipo_estudio);
+  const { items: studyTypes, loading, createItem } = useCatalog(CatalogType.tipo_estudio);
   const currentStudies = useMemo(() => data.studies || [], [data.studies]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [newStudyName, setNewStudyName] = useState("");
+  const [isCreatingStudy, setIsCreatingStudy] = useState(false);
+  const [studyCreationError, setStudyCreationError] = useState<string | null>(null);
 
   // Asegurar que cada tipo_estudio tenga su entrada en studies
   useEffect(() => {
@@ -55,6 +58,43 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
       }
       return [...prev, { studyTypeId: typeId, studyTypeName: typeName, performed, findingsText: "", images: [] }];
     });
+  };
+
+  const handleCreateStudy = async () => {
+    const name = newStudyName.trim();
+    if (!name || isCreatingStudy) return;
+
+    try {
+      setIsCreatingStudy(true);
+      setStudyCreationError(null);
+      const result = await createItem(name, "caso");
+
+      updateField("studies", (prev = []) => {
+        if (prev.some((study) => study.studyTypeId === result.item.id)) {
+          return prev;
+        }
+        return [
+          ...prev,
+          {
+            studyTypeId: result.item.id,
+            studyTypeName: result.item.name,
+            performed: false,
+            findingsText: "",
+            images: [],
+          },
+        ];
+      });
+      setNewStudyName("");
+    } catch (error) {
+      console.error("Error al crear tipo de estudio:", error);
+      setStudyCreationError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar el nuevo estudio."
+      );
+    } finally {
+      setIsCreatingStudy(false);
+    }
   };
 
   const handleAddImages = async (typeId: string, files: FileList | null) => {
@@ -135,6 +175,47 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="p-5 rounded-2xl bg-card-bg border border-border-subtle space-y-3">
+        <div>
+          <h3 className="text-sm font-bold text-text-main">
+            Agregar un nuevo estudio
+          </h3>
+          <p className="text-xs text-text-muted mt-1">
+            Se guardará únicamente el título para reutilizarlo en futuros casos.
+            Los hallazgos y las imágenes pertenecen a cada caso.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={newStudyName}
+            onChange={(event) => setNewStudyName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleCreateStudy();
+              }
+            }}
+            placeholder="Ej: Resonancia magnética cerebral"
+            className="flex-1 px-3.5 py-2.5 rounded-xl text-sm border border-border-subtle bg-surface text-text-main focus:outline-none focus:ring-1 focus:ring-teal"
+            disabled={isCreatingStudy}
+          />
+          <button
+            type="button"
+            onClick={() => void handleCreateStudy()}
+            disabled={!newStudyName.trim() || isCreatingStudy}
+            className="btn btn-teal px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCreatingStudy ? "Guardando..." : "Guardar estudio"}
+          </button>
+        </div>
+        {studyCreationError && (
+          <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-300">
+            {studyCreationError}
+          </p>
+        )}
       </div>
 
       {loading ? (
