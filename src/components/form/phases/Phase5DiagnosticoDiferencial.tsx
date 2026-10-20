@@ -93,7 +93,7 @@ export const Phase5DiagnosticoDiferencial = React.memo(function Phase5Diagnostic
               onClick={handleAddDiagnosis}
               className="btn btn-teal text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 font-semibold cursor-pointer shadow-xs"
             >
-              <span>+</span> Agregar Opción Diagnóstica
+              Agregar Opción Diagnóstica
             </button>
           )}
         </div>

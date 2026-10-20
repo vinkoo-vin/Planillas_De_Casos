@@ -254,7 +254,7 @@ export const Phase2SignosSintomas = React.memo(function Phase2SignosSintomas({
             onClick={handleAddAdditionalField}
             className="btn btn-teal text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 font-semibold"
           >
-            <span>+</span> Agregar Campo Adicional
+            Agregar Campo Adicional
           </button>
         </div>
 

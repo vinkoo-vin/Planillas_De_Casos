@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CatalogType } from "@prisma/client";
-import { CaseDraft, FormErrorMap, StudyItemDraft } from "@/types/clinical";
+import { CaseDraft, FormErrorMap, StudyImageDraft, StudyItemDraft } from "@/types/clinical";
 import { useCatalog } from "@/lib/use-catalog";
+import { compressImageToWebP } from "@/lib/image-compression";
 
 interface Phase4EstudiosProps {
   data: CaseDraft;
@@ -17,7 +18,8 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
   updateField,
 }: Phase4EstudiosProps) {
   const { items: studyTypes, loading } = useCatalog(CatalogType.tipo_estudio);
-  const currentStudies = data.studies || [];
+  const currentStudies = useMemo(() => data.studies || [], [data.studies]);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Asegurar que cada tipo_estudio tenga su entrada en studies
   useEffect(() => {
@@ -36,6 +38,7 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
         studyTypeName: t.name,
         performed: false,
         findingsText: "",
+        images: [],
       };
     });
 
@@ -50,8 +53,63 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
       if (idx >= 0) {
         return prev.map((s, i) => (i === idx ? { ...s, performed } : s));
       }
-      return [...prev, { studyTypeId: typeId, studyTypeName: typeName, performed, findingsText: "" }];
+      return [...prev, { studyTypeId: typeId, studyTypeName: typeName, performed, findingsText: "", images: [] }];
     });
+  };
+
+  const handleAddImages = async (typeId: string, files: FileList | null) => {
+    if (!files?.length) return;
+
+    try {
+      setImageError(null);
+      const compressedImages = await Promise.all(
+        Array.from(files).map((file) => compressImageToWebP(file))
+      );
+      const newImages: StudyImageDraft[] = compressedImages.map((image) => ({
+        url: image.dataUrl,
+        name: image.name,
+        description: "",
+      }));
+      updateField("studies", (prev = []) =>
+        prev.map((s) =>
+          s.studyTypeId === typeId
+            ? { ...s, images: [...(s.images || []), ...newImages] }
+            : s
+        )
+      );
+    } catch (error) {
+      console.error("Error al procesar imagen del estudio:", error);
+      setImageError("No se pudo procesar una de las imágenes. Verifique el archivo e inténtelo nuevamente.");
+    }
+  };
+
+  const handleUpdateImage = (
+    typeId: string,
+    imageIndex: number,
+    updates: Partial<StudyImageDraft>
+  ) => {
+    updateField("studies", (prev = []) =>
+      prev.map((s) =>
+        s.studyTypeId === typeId
+          ? {
+              ...s,
+              images: (s.images || []).map((image, index) =>
+                index === imageIndex ? { ...image, ...updates } : image
+              ),
+            }
+          : s
+      )
+    );
+  };
+
+  const handleRemoveImage = (typeId: string, imageIndex: number) => {
+    updateField("studies", (prev = []) =>
+      prev.map((s) =>
+        s.studyTypeId === typeId
+          ? { ...s, images: (s.images || []).filter((_, index) => index !== imageIndex) }
+          : s
+      )
+    );
   };
 
   const handleUpdateFindings = (typeId: string, findingsText: string) => {
@@ -86,12 +144,21 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
         </div>
       ) : (
         <div className="space-y-4">
+          {imageError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-600 dark:text-rose-300"
+            >
+              {imageError}
+            </div>
+          )}
           {studyTypes.map((st) => {
             const entry = currentStudies.find((s) => s.studyTypeId === st.id) || {
               studyTypeId: st.id,
               studyTypeName: st.name,
               performed: false,
               findingsText: "",
+              images: [],
             };
 
             return (
@@ -148,6 +215,63 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
                       value={entry.findingsText || ""}
                       onChange={(e) => handleUpdateFindings(st.id, e.target.value)}
                     />
+
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <span className="text-xs font-bold text-text-main">
+                          Imágenes del estudio ({entry.images?.length || 0})
+                        </span>
+                        <label className="btn border border-teal/40 text-teal-text hover:bg-teal-light text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors">
+                          Subir imagen
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="sr-only"
+                            onChange={(e) => {
+                              void handleAddImages(st.id, e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {entry.images && entry.images.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {entry.images.map((image, imageIndex) => (
+                            <div
+                              key={image.id || `${st.id}-${imageIndex}`}
+                              className="rounded-xl border border-border-subtle bg-surface p-2.5 space-y-2"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={image.url}
+                                alt={image.description || `Imagen ${imageIndex + 1} de ${st.name}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              <input
+                                type="text"
+                                value={image.description}
+                                onChange={(e) =>
+                                  handleUpdateImage(st.id, imageIndex, {
+                                    description: e.target.value,
+                                  })
+                                }
+                                placeholder="Descripción de la imagen"
+                                className="w-full px-3 py-2 rounded-lg text-xs border border-border-subtle bg-card-bg text-text-main focus:outline-none focus:ring-1 focus:ring-teal"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(st.id, imageIndex)}
+                                className="text-xs font-semibold text-rose-500 hover:underline cursor-pointer"
+                              >
+                                Eliminar imagen
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

@@ -176,13 +176,13 @@ export const Phase3ExamenFisico = React.memo(function Phase3ExamenFisico({
               onClick={handleAddFinding}
               className="btn btn-teal text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 font-semibold cursor-pointer shadow-xs"
             >
-              <span>+</span> Agregar Punto Anatómico
+              Agregar Punto Anatómico
             </button>
           </div>
 
           {findings.length === 0 ? (
             <div className="p-8 text-center border-2 border-dashed border-border-subtle rounded-xl text-text-muted text-xs">
-              No hay puntos anatómicos configurados. Haga clic en &ldquo;+ Agregar Punto Anatómico&rdquo; para sumar zonas como epigastrio, hipocondrio, etc.
+              No hay puntos anatómicos configurados. Haga clic en &ldquo;Agregar Punto Anatómico&rdquo; para sumar zonas como epigastrio, hipocondrio, etc.
             </div>
           ) : (
             <div className="space-y-4 pt-2">
@@ -277,7 +277,7 @@ export const Phase3ExamenFisico = React.memo(function Phase3ExamenFisico({
             onClick={handleAddAdditionalField}
             className="btn btn-teal text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 font-semibold"
           >
-            <span>+</span> Agregar Campo Adicional
+            Agregar Campo Adicional
           </button>
         </div>
 

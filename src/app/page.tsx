@@ -9,7 +9,7 @@ import { MetricsKPIs } from "@/components/cases/MetricsKPIs";
 import { CasesTable } from "@/components/cases/CasesTable";
 import { CaseForm } from "@/components/form/CaseForm";
 import { ThemeSwitcher } from "@/components/common/ThemeSwitcher";
-import { CaseDetailModal } from "@/components/cases/CaseDetailModal";
+import { CaseDetailView } from "@/components/cases/CaseDetailView";
 
 // Carga diferida de componentes pesados bajo demanda (Code-Splitting según Vercel Best Practices)
 const FormGuide = dynamic(
@@ -91,6 +91,7 @@ export default function Home() {
       const cached = caseDetailsCache.current.get(id);
       if (cached) {
         setInspectingCase(cached);
+        setActiveTab("detail");
         return;
       }
 
@@ -98,6 +99,7 @@ export default function Home() {
       const partial = savedCasesList.find((c) => c.id === id);
       if (partial) {
         setInspectingCase(partial);
+        setActiveTab("detail");
       }
 
       // 3. Carga en segundo plano
@@ -111,6 +113,7 @@ export default function Home() {
           if (json.success && json.data) {
             caseDetailsCache.current.set(id, json.data);
             setInspectingCase(json.data);
+            setActiveTab("detail");
           }
         })
         .catch((err) => {
@@ -224,8 +227,9 @@ export default function Home() {
         // 2. Limpiar de la caché de detalles
         caseDetailsCache.current.delete(id);
 
-        // 3. Cerrar el modal si estaba abierto con este caso
-        setInspectingCase((prev) => (prev?.id === id ? null : prev));
+        // 3. Cerrar la ficha si estaba abierta con este caso
+        setInspectingCase(null);
+        setActiveTab("list");
 
         // 4. Si el formulario estaba editando este caso, cancelarlo
         setFormDraft((prev) => (prev?.id === id ? null : prev));
@@ -266,7 +270,7 @@ export default function Home() {
 
       <div className="container max-w-5xl mx-auto px-4 py-8">
         {/* ENCABEZADO DE SECCIÓN ACTIVA (SOLO PARA FORMULARIO Y LISTA) */}
-        {activeTab !== "guide" && (
+        {activeTab !== "guide" && activeTab !== "detail" && (
           <header className="text-center mb-8">
             <div className="badge-top inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
               <span className="badge-dot w-2 h-2 rounded-full" />
@@ -359,24 +363,24 @@ export default function Home() {
               onPrefetch={handlePrefetchCase}
             />
           </div>
+        ) : activeTab === "detail" ? (
+          <CaseDetailView
+            caseData={inspectingCase}
+            isLoading={isLoadingDetail}
+            onBackToList={() => {
+              setInspectingCase(null);
+              setActiveTab("list");
+            }}
+            onCopyNotice={handleNotify}
+            onEditCase={handleEditCase}
+            onDeleteCase={handleDeleteCase}
+          />
         ) : (
           /* GUÍA DEL FORMULARIO REDISEÑADA */
           <FormGuide
             onGoToForm={() => setActiveTab("form")}
             onLoadCaseExample={handleLoadCaseExample}
             onNotify={handleNotify}
-          />
-        )}
-
-        {/* MODAL DE FICHA CLÍNICA DETALLADA */}
-        {inspectingCase && (
-          <CaseDetailModal
-            caseData={inspectingCase}
-            isLoading={isLoadingDetail}
-            onClose={() => setInspectingCase(null)}
-            onCopyNotice={handleNotify}
-            onEditCase={handleEditCase}
-            onDeleteCase={handleDeleteCase}
           />
         )}
 

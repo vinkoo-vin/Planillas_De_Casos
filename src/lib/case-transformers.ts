@@ -37,6 +37,11 @@ export function savedCaseToDraft(savedCase: SavedCase): CaseDraft {
     studyTypeName: s.studyType?.name || "",
     performed: s.performed,
     findingsText: s.findingsText || "",
+    images: (s.images || []).map((image) => ({
+      id: image.id,
+      url: image.url,
+      description: image.description || "",
+    })),
   }));
 
   // F5 - Diagnósticos

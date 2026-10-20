@@ -70,6 +70,7 @@ export function useCaseForm({
   const [formErrors, setFormErrors] = useState<FormErrorMap>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCase, setSubmittedCase] = useState<SavedCase | null>(null);
+  const [showPostSubmitModal, setShowPostSubmitModal] = useState(false);
 
   // Sincronizar borrador inicial si cambia externamente (ej: al hacer clic en Editar en la tabla)
   if (initialDraft !== prevDraft) {
@@ -101,9 +102,19 @@ export function useCaseForm({
     setFormErrors({});
     setEditingCaseId(null);
     setSubmittedCase(null);
+    setShowPostSubmitModal(false);
     setCurrentPhase(1);
     if (onClearDraft) onClearDraft();
   }, [onClearDraft]);
+
+  const reuseFormData = useCallback(() => {
+    setFormData((prev) => ({ ...prev, id: undefined, isEditing: false, status: "DRAFT" }));
+    setFormErrors({});
+    setEditingCaseId(null);
+    setSubmittedCase(null);
+    setShowPostSubmitModal(false);
+    setCurrentPhase(1);
+  }, []);
 
   // Validación y estado de completitud por fase (1 a 8)
   const phaseValidation = useMemo((): Record<FormPhase, PhaseValidationState> => {
@@ -201,7 +212,7 @@ export function useCaseForm({
 
   // Envío del caso (Creación o Actualización)
   const handleSubmit = useCallback(
-    async (e?: FormEvent) => {
+    async (e?: FormEvent, openReuseModal = false) => {
       if (e) e.preventDefault();
 
       if (!formData.finalDiagnosisId) {
@@ -240,6 +251,10 @@ export function useCaseForm({
               studyTypeId: s.studyTypeId,
               performed: Boolean(s.performed),
               findingsText: s.findingsText || null,
+              images: (s.images || []).map((image) => ({
+                url: image.url,
+                description: image.description || null,
+              })),
             })) || [],
           // F5
           diagnoses:
@@ -305,6 +320,7 @@ export function useCaseForm({
 
         const saved: SavedCase = json.data;
         setSubmittedCase(saved);
+        setShowPostSubmitModal(openReuseModal);
 
         if (isEditing && onCaseUpdated) {
           onCaseUpdated(saved);
@@ -336,7 +352,9 @@ export function useCaseForm({
     updateField,
     isSubmitting,
     submittedCase,
+    showPostSubmitModal,
     handleSubmit,
     handleResetForm,
+    reuseFormData,
   };
 }

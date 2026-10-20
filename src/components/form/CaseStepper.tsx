@@ -19,7 +19,6 @@ interface PhaseDefinition {
   phase: FormPhase;
   number: string;
   title: string;
-  subtitle: string;
 }
 
 export const PHASES: PhaseDefinition[] = [
@@ -27,49 +26,41 @@ export const PHASES: PhaseDefinition[] = [
     phase: 1,
     number: "1",
     title: "Motivo de Consulta",
-    subtitle: "Diagnóstico final y motivos",
   },
   {
     phase: 2,
     number: "2",
     title: "Signos y Síntomas",
-    subtitle: "Anamnesis y video clínico",
   },
   {
     phase: 3,
     number: "3",
     title: "Examen Físico",
-    subtitle: "Puntos 3D o relato narrativo",
   },
   {
     phase: 4,
     number: "4",
     title: "Estudios",
-    subtitle: "Rx, TAC, Eco, Laboratorio",
   },
   {
     phase: 5,
     number: "5",
     title: "Diagnóstico Diferencial",
-    subtitle: "5 opciones y correcto",
   },
   {
     phase: 6,
     number: "6",
     title: "Tratamiento",
-    subtitle: "Médico y resolución quirúrgica",
   },
   {
     phase: 7,
     number: "7",
     title: "Complicaciones",
-    subtitle: "Riesgos y notas docentes",
   },
   {
     phase: 8,
     number: "8",
     title: "Resumen",
-    subtitle: "Epílogo docente y cierre",
   },
 ];
 
@@ -94,7 +85,7 @@ export const CaseStepper = React.memo(function CaseStepper({
       <nav
         role="tablist"
         aria-label="Fases del caso clínico"
-        className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 p-1.5 sm:p-2 rounded-2xl bg-surface-subtle border border-border-subtle shadow-sm"
+        className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 sm:p-2 rounded-2xl bg-surface-subtle border border-border-subtle shadow-sm"
       >
         {PHASES.map((p) => {
           const isActive = currentPhase === p.phase;
@@ -113,7 +104,15 @@ export const CaseStepper = React.memo(function CaseStepper({
               tabIndex={isActive ? 0 : -1}
               onClick={() => onSelectPhase(p.phase)}
               onKeyDown={(e) => handleKeyDown(e, p.phase)}
-              className={`stepper-tab relative flex flex-col sm:flex-row items-center sm:items-start gap-2 p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${
+              className={`stepper-tab relative flex flex-row items-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${
+                p.phase === 6
+                  ? "sm:col-start-2"
+                  : p.phase === 7
+                  ? "sm:col-start-3"
+                  : p.phase === 8
+                  ? "sm:col-start-4"
+                  : ""
+              } ${
                 isActive
                   ? "bg-card-bg border border-teal-border shadow-[var(--shadow-extruded-xs)] text-text-main"
                   : "hover:bg-card-bg/60 text-text-muted hover:text-text-main"
@@ -142,16 +141,13 @@ export const CaseStepper = React.memo(function CaseStepper({
                 )}
               </div>
 
-              {/* TÍTULO Y SUBTÍTULO */}
+              {/* TÍTULO */}
               <div className="stepper-tab-content min-w-0 flex-1 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start">
-                  <span className="stepper-tab-title font-bold text-xs leading-snug text-text-main block">
+                  <span className="stepper-tab-title font-bold text-[11px] sm:text-xs leading-snug text-text-main block whitespace-nowrap">
                     {p.title}
                   </span>
                 </div>
-                <span className="stepper-tab-desc text-[10px] text-text-muted leading-tight mt-0.5 hidden sm:block">
-                  {p.subtitle}
-                </span>
               </div>
             </button>
           );

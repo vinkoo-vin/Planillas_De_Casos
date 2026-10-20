@@ -13,6 +13,7 @@ import { Phase7Complicaciones } from "./phases/Phase7Complicaciones";
 import { Phase8Resumen } from "./phases/Phase8Resumen";
 import { CaseSummaryCard } from "./CaseSummaryCard";
 import { useCaseForm } from "./useCaseForm";
+import { PostSubmitReuseModal } from "./PostSubmitReuseModal";
 
 interface CaseFormProps {
   initialDraft?: CaseDraft | null;
@@ -60,6 +61,8 @@ export const CaseForm = React.memo(function CaseForm({
     submittedCase,
     handleSubmit,
     handleResetForm,
+    showPostSubmitModal,
+    reuseFormData,
   } = useCaseForm({
     initialDraft,
     onClearDraft,
@@ -139,7 +142,7 @@ export const CaseForm = React.memo(function CaseForm({
       />
 
       {/* CONTENIDO DE LA FASE ACTIVA */}
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={(event) => void handleSubmit(event, currentPhase === 8)} noValidate>
         <div className="phase-container" id={`phase-panel-${currentPhase}`}>
           {currentPhase === 1 && (
             <Phase1MotivoConsulta
@@ -261,6 +264,13 @@ export const CaseForm = React.memo(function CaseForm({
           submittedCase={submittedCase}
           onResetForm={handleResetForm}
           onViewCases={onViewCasesList}
+        />
+      )}
+
+      {showPostSubmitModal && (
+        <PostSubmitReuseModal
+          onReuse={reuseFormData}
+          onStartOver={handleResetForm}
         />
       )}
     </div>

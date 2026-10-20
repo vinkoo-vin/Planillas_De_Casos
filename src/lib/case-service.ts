@@ -15,6 +15,12 @@ export interface StudyItemInput {
   studyTypeId: string;
   performed: boolean;
   findingsText?: string | null;
+  images?: StudyImageInput[];
+}
+
+export interface StudyImageInput {
+  url: string;
+  description?: string | null;
 }
 
 export interface DiagnosisInput {
@@ -281,6 +287,12 @@ export async function syncCaseChildren(
           studyTypeId: s.studyTypeId,
           performed: Boolean(s.performed),
           findingsText: s.findingsText?.trim() ?? null,
+          images: {
+            create: (s.images || []).map((image) => ({
+              url: image.url,
+              description: image.description?.trim() || null,
+            })),
+          },
         },
       })
     ),

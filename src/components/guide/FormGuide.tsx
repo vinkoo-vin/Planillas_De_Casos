@@ -5,10 +5,10 @@ import { CaseDraft } from "@/types/clinical";
 import { AdequacyBadge } from "@/components/common/AdequacyBadge";
 import {
   REAL_CASE_EXAMPLES,
-  GUIDE_SECTIONS,
   type GuideSection,
   type RealCaseExample,
 } from "./guideData";
+import { CURRENT_GUIDE_SECTIONS } from "./currentGuideData";
 
 interface FormGuideProps {
   onGoToForm: () => void;
@@ -24,7 +24,7 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
   const [selectedExampleId, setSelectedExampleId] = useState<string>("ehp");
 
   const realCaseExamples: RealCaseExample[] = REAL_CASE_EXAMPLES;
-  const guideSections: GuideSection[] = GUIDE_SECTIONS;
+  const guideSections: GuideSection[] = CURRENT_GUIDE_SECTIONS;
 
   // FILTRADO POR BÚSQUEDA Y POR MÓDULO
   const filteredGuideSections = useMemo(() => {
@@ -167,24 +167,34 @@ export function FormGuide({ onGoToForm, onLoadCaseExample, onNotify }: FormGuide
       {mainTab === "modules" && (
         <div className="space-y-6">
           {/* SELECTOR RÁPIDO DE FASE */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="pb-2">
             <button
               type="button"
               onClick={() => setActiveModuleNumber("all")}
-              className={`guide-badge-pill px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0 ${
+              className={`guide-badge-pill px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer ${
                 activeModuleNumber === "all" ? "active" : ""
               }`}
             >
               Todas las Fases ({guideSections.length})
             </button>
+          </div>
 
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 pb-2">
             {guideSections.map((sec) => (
               <button
                 key={sec.id}
                 type="button"
                 onClick={() => setActiveModuleNumber(sec.number)}
-                className={`guide-badge-pill px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                className={`guide-badge-pill px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 ${
                   activeModuleNumber === sec.number ? "active" : ""
+                } ${
+                  sec.number === 6
+                    ? "lg:col-start-2"
+                    : sec.number === 7
+                    ? "lg:col-start-3"
+                    : sec.number === 8
+                    ? "lg:col-start-4"
+                    : ""
                 }`}
               >
                 <span className="w-4 h-4 rounded-full bg-black/10 inline-flex items-center justify-center text-[10px] font-bold">

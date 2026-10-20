@@ -630,6 +630,7 @@ export function CaseDetailView({
       {/* LIGHTBOX DE IMÁGENES */}
       {lightboxImage && (
         <ImageLightboxModal
+          isOpen
           imageUrl={lightboxImage.url}
           title={lightboxImage.title}
           onClose={() => setLightboxImage(null)}

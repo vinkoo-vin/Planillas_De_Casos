@@ -199,13 +199,13 @@ export const Phase6Tratamiento = React.memo(function Phase6Tratamiento({
                   onClick={handleAddStep}
                   className="btn btn-teal text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 font-semibold cursor-pointer shadow-xs"
                 >
-                  <span>+</span> Agregar Paso
+                  Agregar Paso
                 </button>
               </div>
 
               {steps.length === 0 ? (
                 <div className="p-4 text-center border border-dashed border-border-subtle rounded-xl text-text-muted text-xs">
-                  Sin pasos técnicos registrados. Haga clic en &ldquo;+ Agregar Paso&rdquo; para detallar la secuencia operatoria.
+                  Sin pasos técnicos registrados. Haga clic en &ldquo;Agregar Paso&rdquo; para detallar la secuencia operatoria.
                 </div>
               ) : (
                 <div className="space-y-2">

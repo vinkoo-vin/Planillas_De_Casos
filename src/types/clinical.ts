@@ -158,6 +158,14 @@ export interface StudyItemDraft {
   studyTypeName: string;
   performed: boolean;
   findingsText: string;
+  images?: StudyImageDraft[];
+}
+
+export interface StudyImageDraft {
+  id?: string;
+  url: string;
+  description: string;
+  name?: string;
 }
 
 export interface DiagnosisDraft {
