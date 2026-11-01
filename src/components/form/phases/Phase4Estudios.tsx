@@ -14,12 +14,12 @@ interface Phase4EstudiosProps {
 
 export const Phase4Estudios = React.memo(function Phase4Estudios({
   data,
-  errors,
   updateField,
 }: Phase4EstudiosProps) {
   const { items: studyTypes, loading, createItem } = useCatalog(CatalogType.tipo_estudio);
   const currentStudies = useMemo(() => data.studies || [], [data.studies]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [draggingStudyId, setDraggingStudyId] = useState<string | null>(null);
   const [newStudyName, setNewStudyName] = useState("");
   const [isCreatingStudy, setIsCreatingStudy] = useState(false);
   const [studyCreationError, setStudyCreationError] = useState<string | null>(null);
@@ -97,13 +97,13 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
     }
   };
 
-  const handleAddImages = async (typeId: string, files: FileList | null) => {
-    if (!files?.length) return;
+  const handleAddImages = async (typeId: string, files: File[]) => {
+    if (files.length === 0) return;
 
     try {
       setImageError(null);
       const compressedImages = await Promise.all(
-        Array.from(files).map((file) => compressImageToWebP(file))
+        files.map((file) => compressImageToWebP(file))
       );
       const newImages: StudyImageDraft[] = compressedImages.map((image) => ({
         url: image.dataUrl,
@@ -120,6 +120,18 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
     } catch (error) {
       console.error("Error al procesar imagen del estudio:", error);
       setImageError("No se pudo procesar una de las imágenes. Verifique el archivo e inténtelo nuevamente.");
+    }
+  };
+
+  const handlePasteImages = (typeId: string, event: React.ClipboardEvent<HTMLDivElement>) => {
+    const imageFiles = Array.from(event.clipboardData.items)
+      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => Boolean(file));
+
+    if (imageFiles.length > 0) {
+      event.preventDefault();
+      void handleAddImages(typeId, imageFiles);
     }
   };
 
@@ -303,18 +315,53 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
                           Imágenes del estudio ({entry.images?.length || 0})
                         </span>
                         <label className="btn border border-teal/40 text-teal-text hover:bg-teal-light text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors">
-                          Subir imagen
+                          Seleccionar imágenes
                           <input
                             type="file"
                             accept="image/*"
                             multiple
                             className="sr-only"
                             onChange={(e) => {
-                              void handleAddImages(st.id, e.target.files);
+                              void handleAddImages(st.id, Array.from(e.target.files || []));
                               e.target.value = "";
                             }}
                           />
                         </label>
+                      </div>
+
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Agregar imágenes para ${st.name}`}
+                        onPaste={(event) => handlePasteImages(st.id, event)}
+                        onDragEnter={(event) => {
+                          event.preventDefault();
+                          setDraggingStudyId(st.id);
+                        }}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDragLeave={() => setDraggingStudyId(null)}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setDraggingStudyId(null);
+                          void handleAddImages(
+                            st.id,
+                            Array.from(event.dataTransfer.files).filter((file) =>
+                              file.type.startsWith("image/")
+                            )
+                          );
+                        }}
+                        className={`rounded-xl border-2 border-dashed p-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-teal ${
+                          draggingStudyId === st.id
+                            ? "border-teal bg-teal-light"
+                            : "border-border-subtle bg-surface-subtle hover:border-teal/50"
+                        }`}
+                      >
+                        <p className="text-xs font-semibold text-text-main">
+                          Arrastre imágenes aquí o péguelas desde el portapapeles
+                        </p>
+                        <p className="text-[11px] text-text-muted mt-1">
+                          Puede agregar varias imágenes y describirlas individualmente.
+                        </p>
                       </div>
 
                       {entry.images && entry.images.length > 0 && (

@@ -138,6 +138,34 @@ export const CaseSummaryCard = React.memo(function CaseSummaryCard({
           </div>
         </div>
 
+        <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle col-span-full">
+          <h5 className="text-xs font-bold uppercase text-teal-text mb-1">
+            Complicaciones y Riesgos ({submittedCase.complications?.length || 0})
+          </h5>
+          {submittedCase.complicationsIntroText && (
+            <p className="text-xs text-text-main leading-relaxed whitespace-pre-wrap mb-3">
+              {submittedCase.complicationsIntroText}
+            </p>
+          )}
+          {submittedCase.complications?.length ? (
+            <div className="space-y-1.5">
+              {submittedCase.complications.map((complication) => (
+                <div
+                  key={complication.itemId}
+                  className="text-xs text-text-main rounded-lg bg-card-bg border border-border-subtle p-2"
+                >
+                  <span className="font-semibold">{complication.item?.name}</span>
+                  {complication.note && (
+                    <span className="text-text-muted"> — {complication.note}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : !submittedCase.complicationsIntroText ? (
+            <p className="text-xs text-text-muted">Sin complicaciones registradas.</p>
+          ) : null}
+        </div>
+
         {submittedCase.summary && (
           <div className="summary-box p-4 rounded-xl border border-border-subtle bg-surface-subtle col-span-full">
             <h5 className="text-xs font-bold uppercase text-teal-text mb-1">
