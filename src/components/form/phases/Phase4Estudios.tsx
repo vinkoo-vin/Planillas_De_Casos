@@ -135,6 +135,41 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
     }
   };
 
+  const handlePasteFromClipboard = async (typeId: string) => {
+    try {
+      setImageError(null);
+
+      if (!navigator.clipboard?.read) {
+        setImageError("El navegador no permite pegar imágenes con el botón. Use Ctrl+V o seleccione un archivo.");
+        return;
+      }
+
+      const clipboardItems = await navigator.clipboard.read();
+      const imageFiles: File[] = [];
+
+      for (const [itemIndex, item] of clipboardItems.entries()) {
+        const imageType = item.types.find((type) => type.startsWith("image/"));
+        if (!imageType) continue;
+
+        const blob = await item.getType(imageType);
+        const extension = imageType.split("/")[1] || "png";
+        imageFiles.push(new File([blob], `imagen-pegada-${itemIndex + 1}.${extension}`, {
+          type: imageType,
+        }));
+      }
+
+      if (imageFiles.length === 0) {
+        setImageError("No hay imágenes en el portapapeles para pegar.");
+        return;
+      }
+
+      await handleAddImages(typeId, imageFiles);
+    } catch (error) {
+      console.error("Error al pegar imágenes desde el portapapeles:", error);
+      setImageError("No se pudo acceder al portapapeles. Verifique los permisos del navegador e inténtelo nuevamente.");
+    }
+  };
+
   const handleUpdateImage = (
     typeId: string,
     imageIndex: number,
@@ -314,19 +349,28 @@ export const Phase4Estudios = React.memo(function Phase4Estudios({
                         <span className="text-xs font-bold text-text-main">
                           Imágenes del estudio ({entry.images?.length || 0})
                         </span>
-                        <label className="btn border border-teal/40 text-teal-text hover:bg-teal-light text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors">
-                          Seleccionar imágenes
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="sr-only"
-                            onChange={(e) => {
-                              void handleAddImages(st.id, Array.from(e.target.files || []));
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handlePasteFromClipboard(st.id)}
+                            className="btn border border-teal/40 text-teal-text hover:bg-teal-light text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors"
+                          >
+                            PEGAR
+                          </button>
+                          <label className="btn border border-teal/40 text-teal-text hover:bg-teal-light text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors">
+                            Seleccionar imágenes
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="sr-only"
+                              onChange={(e) => {
+                                void handleAddImages(st.id, Array.from(e.target.files || []));
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        </div>
                       </div>
 
                       <div
