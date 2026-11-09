@@ -116,6 +116,14 @@ export function Topbar({ activeTab, onTabChange, savedCasesCount }: TopbarProps)
               </svg>
               Catálogos
             </Link>
+
+            <Link
+              href="/demo"
+              className="nav-segmented-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap text-text-muted hover:text-teal hover:bg-teal/10"
+              title="Ver demo de la aplicación móvil"
+            >
+              DEMO
+            </Link>
           </div>
         </div>
       </div>
