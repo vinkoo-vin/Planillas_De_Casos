@@ -5,24 +5,18 @@ const demoFilePath =
 
 export default function DemoPage() {
   return (
-    <main className="min-h-screen bg-bg p-4 sm:p-6">
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col gap-4 sm:min-h-[calc(100vh-3rem)]">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold text-text-main">Demo móvil</h1>
-          <Link
-            href="/"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover"
-          >
-            Volver a casos
-          </Link>
-        </div>
-
-        <iframe
-          title="Pediatric Surgery Hub - Demo móvil"
-          src={demoFilePath}
-          className="min-h-0 flex-1 rounded-xl border border-card-border bg-white shadow-extruded-md"
-        />
-      </div>
+    <main className="relative h-screen w-screen overflow-hidden bg-bg">
+      <Link
+        href="/"
+        className="absolute left-4 top-4 z-10 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-lg transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Volver a casos
+      </Link>
+      <iframe
+        title="Pediatric Surgery Hub - Demo móvil"
+        src={demoFilePath}
+        className="block h-full w-full border-0"
+      />
     </main>
   );
 }
