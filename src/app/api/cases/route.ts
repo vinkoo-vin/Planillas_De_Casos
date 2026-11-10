@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const id = searchParams.get("id");
     const isFull = searchParams.get("full") === "true";
+    const includeArchived = searchParams.get("includeArchived") === "true";
 
     // ── Caso individual por ID ──────────────────────────────
     if (id) {
@@ -41,14 +42,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // ── Lista de casos ──────────────────────────────────────
+    // ── Lista de casos (excluye casos desactivados/archivados por defecto) ──
+    const whereClause = includeArchived
+      ? undefined
+      : { status: { not: "ARCHIVED" as const } };
+
     const cases = isFull
       ? await prisma.case.findMany({
+          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
           include: caseDetailIncludes,
         })
       : await prisma.case.findMany({
+          where: whereClause,
           orderBy: { createdAt: "desc" },
           take: 100,
           select: caseListSelect,
@@ -197,20 +204,23 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Eliminación en cascada configurada en el schema
-    await prisma.case.delete({ where: { id } });
+    // Baja lógica (desactivación): se marca como ARCHIVED sin eliminar registros de la base de datos
+    await prisma.case.update({
+      where: { id },
+      data: { status: "ARCHIVED" },
+    });
 
     return NextResponse.json({
       success: true,
-      message: `El caso clínico fue eliminado exitosamente`,
+      message: "El caso clínico fue desactivado exitosamente",
       id,
     });
   } catch (error) {
-    console.error("[Casos] Error al eliminar caso clínico:", error);
+    console.error("[Casos] Error al desactivar caso clínico:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Error interno al eliminar el caso de la base de datos",
+        error: "Error interno al desactivar el caso en la base de datos",
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

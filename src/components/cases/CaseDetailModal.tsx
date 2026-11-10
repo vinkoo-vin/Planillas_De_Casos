@@ -3,8 +3,8 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { SavedCase } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
-import { CloseIcon, EditIcon, TrashIcon, ZoomInIcon } from "@/components/common/Icons";
-import { formatCaseDate } from "@/lib/case-transformers";
+import { CloseIcon, DownloadIcon, EditIcon, TrashIcon, ZoomInIcon } from "@/components/common/Icons";
+import { downloadCaseAsMarkdown, formatCaseDate } from "@/lib/case-transformers";
 
 interface CaseDetailModalProps {
   caseData: SavedCase | null;
@@ -12,6 +12,7 @@ interface CaseDetailModalProps {
   onClose: () => void;
   onCopyNotice: (msg: string) => void;
   onEditCase?: (caseData: SavedCase) => void;
+  onDownloadMarkdown?: (caseData: SavedCase) => void;
   onDeleteCase?: (id: string, title: string) => void;
 }
 
@@ -21,6 +22,7 @@ export function CaseDetailModal({
   onClose,
   onCopyNotice,
   onEditCase,
+  onDownloadMarkdown,
   onDeleteCase,
 }: CaseDetailModalProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
@@ -40,6 +42,16 @@ export function CaseDetailModal({
     navigator.clipboard.writeText(JSON.stringify(caseData, null, 2));
     onCopyNotice("JSON de Caso copiado al portapapeles");
   }, [caseData, onCopyNotice]);
+
+  const handleDownloadMd = useCallback(() => {
+    if (!caseData) return;
+    if (onDownloadMarkdown) {
+      onDownloadMarkdown(caseData);
+      return;
+    }
+    const fileName = downloadCaseAsMarkdown(caseData);
+    onCopyNotice(`Caso descargado como "${fileName}"`);
+  }, [caseData, onDownloadMarkdown, onCopyNotice]);
 
   const caseTitle = caseData?.finalDiagnosis?.name || "Caso Clínico";
 
@@ -499,6 +511,15 @@ export function CaseDetailModal({
           {/* PIE DEL MODAL */}
           <div className="modal-footer-bar p-4 border-t flex items-center justify-between gap-3 bg-surface-subtle rounded-b-2xl flex-wrap">
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="btn border border-border-subtle text-text-main hover:bg-surface-hover text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs transition-colors"
+                onClick={handleDownloadMd}
+                title="Descargar caso clínico en formato Markdown (.md)"
+              >
+                <DownloadIcon width={14} height={14} />
+                Descargar .md
+              </button>
               <button
                 type="button"
                 className="btn border border-border-subtle text-text-main hover:bg-surface-hover text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs transition-colors"

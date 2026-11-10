@@ -3,7 +3,7 @@
 import React, { useState, useDeferredValue, useMemo } from "react";
 import { SavedCase } from "@/types/clinical";
 import { formatCaseDate } from "@/lib/case-transformers";
-import { CloseIcon, EditIcon, RefreshIcon, TrashIcon } from "@/components/common/Icons";
+import { CloseIcon, DownloadIcon, EditIcon, RefreshIcon, TrashIcon } from "@/components/common/Icons";
 
 interface CasesTableProps {
   cases: SavedCase[];
@@ -11,6 +11,8 @@ interface CasesTableProps {
   onRefresh: () => void;
   onInspect: (id: string) => void;
   onEdit?: (c: SavedCase) => void;
+  onDownloadMarkdown?: (c: SavedCase) => void;
+  downloadingId?: string | null;
   onDelete?: (id: string, title: string) => void;
   deletingId?: string | null;
   onNewCaseClick: () => void;
@@ -23,6 +25,8 @@ export const CasesTable = React.memo(function CasesTable({
   onRefresh,
   onInspect,
   onEdit,
+  onDownloadMarkdown,
+  downloadingId,
   onDelete,
   deletingId,
   onNewCaseClick,
@@ -269,16 +273,29 @@ export const CasesTable = React.memo(function CasesTable({
                         </svg>
                         Ver Ficha
                       </button>
+                      {onDownloadMarkdown && (
+                        <button
+                          type="button"
+                          disabled={downloadingId === c.id}
+                          className="btn-download-case inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer border border-border-subtle bg-surface-subtle text-text-main hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => onDownloadMarkdown(c)}
+                          onMouseEnter={() => onPrefetch?.(c.id)}
+                          title="Descargar caso clínico en formato Markdown (.md)"
+                        >
+                          <DownloadIcon width={13} height={13} />
+                          {downloadingId === c.id ? "Descargando..." : "Descargar .md"}
+                        </button>
+                      )}
                       {onDelete && (
                         <button
                           type="button"
                           disabled={deletingId === c.id}
                           className="btn-delete-case inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => onDelete(c.id, c.finalDiagnosis?.name || "Caso clínico")}
-                          title="Eliminar este caso clínico"
+                          title="Desactivar este caso clínico (no se elimina de la base de datos)"
                         >
                           <TrashIcon width={13} height={13} />
-                          {deletingId === c.id ? "Eliminando..." : "Eliminar"}
+                          {deletingId === c.id ? "Desactivando..." : "Eliminar"}
                         </button>
                       )}
                     </div>

@@ -3,8 +3,8 @@
 import React, { useState, useCallback } from "react";
 import { SavedCase } from "@/types/clinical";
 import { ImageLightboxModal } from "@/components/common/ImageLightboxModal";
-import { EditIcon, TrashIcon, ZoomInIcon, CheckIcon } from "@/components/common/Icons";
-import { formatCaseDate } from "@/lib/case-transformers";
+import { DownloadIcon, EditIcon, TrashIcon, ZoomInIcon, CheckIcon } from "@/components/common/Icons";
+import { downloadCaseAsMarkdown, formatCaseDate } from "@/lib/case-transformers";
 
 interface CaseDetailViewProps {
   caseData: SavedCase | null;
@@ -12,6 +12,7 @@ interface CaseDetailViewProps {
   onBackToList: () => void;
   onCopyNotice: (msg: string) => void;
   onEditCase?: (caseData: SavedCase) => void;
+  onDownloadMarkdown?: (caseData: SavedCase) => void;
   onDeleteCase?: (id: string, title: string) => void;
 }
 
@@ -21,6 +22,7 @@ export function CaseDetailView({
   onBackToList,
   onCopyNotice,
   onEditCase,
+  onDownloadMarkdown,
   onDeleteCase,
 }: CaseDetailViewProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
@@ -30,6 +32,16 @@ export function CaseDetailView({
     navigator.clipboard.writeText(JSON.stringify(caseData, null, 2));
     onCopyNotice("JSON de Caso copiado al portapapeles");
   }, [caseData, onCopyNotice]);
+
+  const handleDownloadMd = useCallback(() => {
+    if (!caseData) return;
+    if (onDownloadMarkdown) {
+      onDownloadMarkdown(caseData);
+      return;
+    }
+    const fileName = downloadCaseAsMarkdown(caseData);
+    onCopyNotice(`Caso descargado como "${fileName}"`);
+  }, [caseData, onDownloadMarkdown, onCopyNotice]);
 
   if (!caseData) {
     return (
@@ -96,6 +108,16 @@ export function CaseDetailView({
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             type="button"
+            onClick={handleDownloadMd}
+            className="btn border border-border-subtle bg-surface-subtle hover:bg-surface-hover text-text-main text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer"
+            title="Descargar caso clínico en formato Markdown (.md)"
+          >
+            <DownloadIcon width={14} height={14} />
+            Descargar .md
+          </button>
+
+          <button
+            type="button"
             onClick={handleCopyJson}
             className="btn border border-border-subtle hover:bg-surface-subtle text-text-muted hover:text-text-main text-xs px-3 py-2 rounded-xl inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer"
             title="Copiar JSON completo del caso"
@@ -124,7 +146,7 @@ export function CaseDetailView({
               type="button"
               onClick={() => onDeleteCase(caseData.id, caseTitle)}
               className="btn border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer"
-              title="Eliminar caso clínico"
+              title="Desactivar caso clínico (no se elimina de la base de datos)"
             >
               <TrashIcon width={14} height={14} />
               Eliminar

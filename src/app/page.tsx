@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition, useMemo, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useTransition,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import dynamic from "next/dynamic";
 import { StudyCatalogItem, SavedCase, CaseDraft } from "@/types/clinical";
-import { savedCaseToDraft } from "@/lib/case-transformers";
+import { downloadCaseAsMarkdown, savedCaseToDraft } from "@/lib/case-transformers";
 import { Topbar, ActiveTab } from "@/components/layout/Topbar";
 import { MetricsKPIs } from "@/components/cases/MetricsKPIs";
 import { CasesTable } from "@/components/cases/CasesTable";
@@ -22,10 +29,8 @@ const FormGuide = dynamic(
         <p className="text-sm font-semibold">Cargando Guía del Formulario...</p>
       </div>
     ),
-  }
+  },
 );
-
-
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("form");
@@ -44,8 +49,11 @@ export default function Home() {
   // Modal de detalle y notificaciones
   const [inspectingCase, setInspectingCase] = useState<SavedCase | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  const [copiedNotification, setCopiedNotification] = useState<string | null>(
+    null,
+  );
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [isDownloadingId, setIsDownloadingId] = useState<string | null>(null);
 
   // Caché en memoria para fichas clínicas completas (acceso instantáneo en 0ms)
   const caseDetailsCache = useRef<Map<string, SavedCase>>(new Map());
@@ -123,7 +131,7 @@ export default function Home() {
           setIsLoadingDetail(false);
         });
     },
-    [savedCasesList]
+    [savedCasesList],
   );
 
   // Carga inicial no bloqueante: la UI del formulario se renderiza al instante
@@ -154,7 +162,8 @@ export default function Home() {
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+      if (notificationTimerRef.current)
+        clearTimeout(notificationTimerRef.current);
     };
   }, [fetchSavedCases]);
 
@@ -164,7 +173,10 @@ export default function Home() {
   }, [savedCasesList]);
 
   const totalTreatmentsCount = useMemo(() => {
-    return savedCasesList.reduce((acc, c) => acc + (c.diagnoses?.length || 0), 0);
+    return savedCasesList.reduce(
+      (acc, c) => acc + (c.diagnoses?.length || 0),
+      0,
+    );
   }, [savedCasesList]);
 
   const handleCaseCreated = useCallback((newCase: SavedCase) => {
@@ -174,12 +186,31 @@ export default function Home() {
 
   const handleCaseUpdated = useCallback((updated: SavedCase) => {
     caseDetailsCache.current.set(updated.id, updated);
-    setSavedCasesList((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    setInspectingCase((prev) => (prev && prev.id === updated.id ? updated : prev));
+    setSavedCasesList((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c)),
+    );
+    setInspectingCase((prev) =>
+      prev && prev.id === updated.id ? updated : prev,
+    );
   }, []);
 
-  const handleEditCase = useCallback((c: SavedCase) => {
-    const draft = savedCaseToDraft(c);
+  const handleEditCase = useCallback(async (c: SavedCase) => {
+    let fullCase = caseDetailsCache.current.get(c.id);
+    if (!fullCase) {
+      try {
+        const res = await fetch(`/api/cases?id=${encodeURIComponent(c.id)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            fullCase = json.data as SavedCase;
+            caseDetailsCache.current.set(c.id, fullCase);
+          }
+        }
+      } catch {
+        // Fallback al objeto parcial si falla la red
+      }
+    }
+    const draft = savedCaseToDraft(fullCase || c);
     setFormDraft(draft);
     setInspectingCase(null);
     setActiveTab("form");
@@ -197,11 +228,40 @@ export default function Home() {
     }, 3200);
   }, []);
 
+  const handleDownloadCaseMarkdown = useCallback(
+    async (c: SavedCase) => {
+      try {
+        setIsDownloadingId(c.id);
+        let fullCase = caseDetailsCache.current.get(c.id);
+
+        if (!fullCase) {
+          const res = await fetch(`/api/cases?id=${encodeURIComponent(c.id)}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              fullCase = json.data as SavedCase;
+              caseDetailsCache.current.set(c.id, fullCase);
+            }
+          }
+        }
+
+        const fileName = downloadCaseAsMarkdown(fullCase || c);
+        handleNotify(`Caso descargado en formato Markdown (${fileName})`);
+      } catch (err) {
+        console.error("Error al descargar el caso en Markdown:", err);
+        handleNotify("Error al descargar el archivo .md del caso");
+      } finally {
+        setIsDownloadingId(null);
+      }
+    },
+    [handleNotify],
+  );
+
   const handleDeleteCase = useCallback(
     async (id: string, title?: string) => {
       const caseName = title ? `"${title}"` : "este caso clínico";
       const confirmed = window.confirm(
-        `¿Está seguro de que desea eliminar ${caseName}?\n\nEsta acción eliminará permanentemente el caso, sus estudios complementarios y conductas terapéuticas de la base de datos.`
+        `¿Está seguro de que desea desactivar ${caseName}?\n\nEl caso solo será desactivado y dejará de mostrarse en el listado activo, pero NO se eliminará de la base de datos.`,
       );
       if (!confirmed) return;
 
@@ -218,10 +278,10 @@ export default function Home() {
 
         const json = await res.json();
         if (!json.success) {
-          throw new Error(json.error || "No se pudo eliminar el caso");
+          throw new Error(json.error || "No se pudo desactivar el caso");
         }
 
-        // 1. Quitar de la lista en memoria
+        // 1. Quitar de la lista activa en memoria
         setSavedCasesList((prev) => prev.filter((c) => c.id !== id));
 
         // 2. Limpiar de la caché de detalles
@@ -236,21 +296,21 @@ export default function Home() {
 
         handleNotify(
           title
-            ? `Caso "${title}" eliminado correctamente`
-            : "Caso clínico eliminado correctamente"
+            ? `Caso "${title}" desactivado correctamente`
+            : "Caso clínico desactivado correctamente",
         );
       } catch (err) {
-        console.error("Error al eliminar caso clínico:", err);
+        console.error("Error al desactivar caso clínico:", err);
         handleNotify(
           err instanceof Error
-            ? `Error al eliminar: ${err.message}`
-            : "Error al eliminar el caso clínico"
+            ? `Error al desactivar: ${err.message}`
+            : "Error al desactivar el caso clínico",
         );
       } finally {
         setIsDeletingId(null);
       }
     },
-    [handleNotify]
+    [handleNotify],
   );
 
   const handleLoadCaseExample = useCallback((draft: CaseDraft) => {
@@ -301,14 +361,24 @@ export default function Home() {
             >
               <div className="flex items-center gap-3 text-xs sm:text-sm text-text-body">
                 <span className="w-8 h-8 rounded-xl bg-primary-light text-primary flex items-center justify-center text-sm shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                  >
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                   </svg>
                 </span>
                 <div>
-                  <span className="font-bold text-text-main">¿Primera vez o dudas con los campos?</span>{" "}
-                  Consulte la guía completa con ejemplos reales y formato de cada sección.
+                  <span className="font-bold text-text-main">
+                    ¿Primera vez o dudas con los campos?
+                  </span>{" "}
+                  Consulte la guía completa con ejemplos reales y formato de
+                  cada sección.
                 </div>
               </div>
               <button
@@ -317,7 +387,14 @@ export default function Home() {
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary-light hover:bg-primary/20 transition-all cursor-pointer"
               >
                 Abrir Guía del Formulario
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
@@ -357,6 +434,8 @@ export default function Home() {
               onRefresh={fetchSavedCases}
               onInspect={handleInspectCase}
               onEdit={handleEditCase}
+              onDownloadMarkdown={handleDownloadCaseMarkdown}
+              downloadingId={isDownloadingId}
               onDelete={handleDeleteCase}
               deletingId={isDeletingId}
               onNewCaseClick={() => setActiveTab("form")}
@@ -373,6 +452,7 @@ export default function Home() {
             }}
             onCopyNotice={handleNotify}
             onEditCase={handleEditCase}
+            onDownloadMarkdown={handleDownloadCaseMarkdown}
             onDeleteCase={handleDeleteCase}
           />
         ) : (
@@ -387,7 +467,14 @@ export default function Home() {
         {/* TOAST FLOTANTE DE NOTIFICACIÓN */}
         {copiedNotification && (
           <div className="fixed bottom-24 right-6 bg-primary text-primary-fg px-5 py-3 rounded-xl shadow-2xl z-50 text-sm font-semibold flex items-center gap-2 animate-fadeIn border border-white/10">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
             {copiedNotification}
@@ -400,7 +487,8 @@ export default function Home() {
         {/* PIE DE PÁGINA */}
         <footer className="mt-12 pt-5 border-t border-border-subtle flex justify-between items-center flex-wrap gap-3 text-xs text-text-muted">
           <div>
-            Vinko &copy; {new Date().getFullYear()} — Plataforma de Casos Clínicos Pediátricos
+            Vinko &copy; {new Date().getFullYear()} — Plataforma de Casos
+            Clínicos Pediátricos
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
